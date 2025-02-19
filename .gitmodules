@@ -1,0 +1,3 @@
+[submodule "scaffold-move"]
+	path = scaffold-move
+	url = git@github.com:arjanjohan/scaffold-move.git
