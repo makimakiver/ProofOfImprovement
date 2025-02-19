@@ -1,20 +1,43 @@
-"use client"; // Only needed in the App Router for client components
-
+"use client";
 import React, { useState } from "react";
 import type { NextPage } from "next";
+import styles from "./page.module.css";
 
-/**
- * A simple page for creating a marketplace entry
- * with title, participants, grade types, and end date.
- */
 const MarketCreatePage: NextPage = () => {
+  // ----- Hardcoded "previous market" data -----
+  const previousMarketData = {
+    title: "Old Title",
+    participants: ["0x1234...abcd", "0x5678...efgh"],
+    gradeTypes: ["A", "B", "C"],
+    endDate: "2025-12-31"
+  };
+
   // Local state for each field
+  const [triger, setTriger] = useState(false);
   const [title, setTitle] = useState("");
   const [participantInput, setParticipantInput] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [gradeTypeInput, setGradeTypeInput] = useState("");
   const [gradeTypes, setGradeTypes] = useState<string[]>([]);
   const [endDate, setEndDate] = useState("");
+
+  // Handler to load the previous market format
+  const handleUsePreviousMarket = () => {
+    if(triger){
+      setTriger(false);
+      setTitle("");
+      setParticipants([]);
+      setGradeTypes([]);
+      setEndDate("");
+    }
+    else{ 
+      setTriger(true);
+      setTitle(previousMarketData.title);
+      setParticipants(previousMarketData.participants);
+      setGradeTypes(previousMarketData.gradeTypes);
+      setEndDate(previousMarketData.endDate);
+    }
+  };
 
   // Handlers for adding multiple participants
   const handleAddParticipant = () => {
@@ -35,100 +58,109 @@ const MarketCreatePage: NextPage = () => {
   // Form submission handler
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // You can handle any on-chain calls or API requests here
-    // For now, just log to the console
     console.log({
       title,
       participants,
       gradeTypes,
-      endDate,
+      endDate
     });
   };
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Create a Marketplace</h1>
-      <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-6">
-        {/* Title */}
-        <div>
-          <label className="block mb-1 font-medium">Title</label>
-          <input
-            type="text"
-            className="input input-bordered w-full"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter market title"
-          />
-        </div>
-
-        {/* Participants */}
-        <div>
-          <label className="block mb-1 font-medium">Add participants</label>
-          <div className="flex gap-2">
+    <div className={styles.container}>
+      <div className={styles.formOutline}>
+        <h1 className={styles.formTitle}>Create a Marketplace</h1>
+        <form onSubmit={handleSubmit}>
+          {/* Title */}
+          <div className={styles.formField}>
+            <label className={styles.label}>Title</label>
             <input
               type="text"
-              className="input input-bordered flex-grow"
-              value={participantInput}
-              onChange={(e) => setParticipantInput(e.target.value)}
-              placeholder="Enter participant wallet"
+              className={styles.inputField}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter market title"
             />
-            <button
-              type="button"
-              className="btn"
-              onClick={handleAddParticipant}
-            >
-              +
-            </button>
           </div>
-          <ul className="mt-2 list-disc list-inside">
-            {participants.map((p, idx) => (
-              <li key={idx}>{p}</li>
-            ))}
-          </ul>
-        </div>
 
-        {/* Grade Types */}
-        <div>
-          <label className="block mb-1 font-medium">Grade Types</label>
-          <div className="flex gap-2">
+          {/* Participants */}
+          <div className={styles.formField}>
+            <label className={styles.label}>Add participants</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                className={`${styles.inputField} flex-grow`}
+                value={participantInput}
+                onChange={(e) => setParticipantInput(e.target.value)}
+                placeholder="Enter participant wallet"
+              />
+              <button
+                type="button"
+                className={styles.addButton}
+                onClick={handleAddParticipant}
+              >
+                +
+              </button>
+            </div>
+            <ul className={styles.participantList}>
+              {participants.map((p, idx) => (
+                <li key={idx}>{p}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Grade Types */}
+          <div className={styles.formField}>
+            <label className={styles.label}>Grade Types</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                className={`${styles.inputField} flex-grow`}
+                value={gradeTypeInput}
+                onChange={(e) => setGradeTypeInput(e.target.value)}
+                placeholder="e.g. A, B, Pass, etc."
+              />
+              <button
+                type="button"
+                className={styles.addButton}
+                onClick={handleAddGradeType}
+              >
+                +
+              </button>
+            </div>
+            <ul className={styles.gradeList}>
+              {gradeTypes.map((g, idx) => (
+                <li key={idx}>{g}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* End Date */}
+          <div className={styles.formField}>
+            <label className={styles.label}>End Date</label>
             <input
-              type="text"
-              className="input input-bordered flex-grow"
-              value={gradeTypeInput}
-              onChange={(e) => setGradeTypeInput(e.target.value)}
-              placeholder="e.g. A, B, Pass, etc."
+              type="date"
+              className={styles.inputField}
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
             />
-            <button
-              type="button"
-              className="btn"
-              onClick={handleAddGradeType}
-            >
-              +
-            </button>
           </div>
-          <ul className="mt-2 list-disc list-inside">
-            {gradeTypes.map((g, idx) => (
-              <li key={idx}>{g}</li>
-            ))}
-          </ul>
-        </div>
+          {/* Button to load "previous" market data */}
+          <button
+            type="button"
+            className={styles.prevMarketBtn}
+            onClick={handleUsePreviousMarket}
+          >
+            {triger ? "Clear" : "Use Previous Market Format"}
+          </button>
 
-        {/* End Date */}
-        <div>
-          <label className="block mb-1 font-medium">End Date</label>
-          <input
-            type="date"
-            className="input input-bordered w-full"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </div>
+          {/* Submit Button */}
+          <button type="submit" className={styles.submitBtn}>
+            Submit
+          </button>
 
-        {/* Submit */}
-        <button type="submit" className="btn btn-primary w-full">
-          Submit
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };
