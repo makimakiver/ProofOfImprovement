@@ -229,5 +229,7 @@ module movement::TestMarketAbstraction {
         let inv_vec_2 = table::borrow(&borrow_global<InvitationRegistry>(@bocchi).invitations, @nijika);
         assert!(vector::length<InvitationObject>(inv_vec_2) == 0, 0);
     }
-
+    // limitation 1, Users cannot call the create_market_place for twice
+    // limitation 2, the program cannot identify whether or not the registry account exists or not in the specified resource account
+    // due to the in-copiability of the object
 }
