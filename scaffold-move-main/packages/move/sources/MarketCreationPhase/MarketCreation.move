@@ -9,7 +9,7 @@ module movement::TestMarketAbstraction {
     use movement::TestPool2;
 
     // store an object which will store a mapping between the invitation and the participant
-    struct InvitationRegistry has key {
+    struct InvitationRegistry has key{
         // from address of the recepient to the list of InvitationObject
         invitations: table::Table<address, vector<InvitationObject>>,
     }
@@ -24,7 +24,7 @@ module movement::TestMarketAbstraction {
         is_listed: bool, //check if the participant is listed in the market
     }
 
-    struct MarketContainer has key {
+    struct MarketContainer has key, drop {
         title: String, //title of the market
         markets: vector<TestPool2::PredictionMarketPool>, //containing the list of the market pools
         pre_participant: vector<address>, //list of users whom the invitation will be received
@@ -40,23 +40,36 @@ module movement::TestMarketAbstraction {
         });
     }
 
-    fun create_market_place(owner: &signer, title_arg: String, pre_participant_arg: vector<address>, options_arg: vector<String>){
-        let pools = vector::empty<TestPool2::PredictionMarketPool>(); //create an empty vector of PredictionMarketPool
+    fun create_market_place(owner: &signer, title_arg: String, pre_participant_arg: vector<address>, options_arg: vector<String>, registry_addr: address) acquires InvitationObject, InvitationRegistry{
         assert!(vector::length<address>(&pre_participant_arg) > 0, 0); //check if the User is not sending the invitation to anyone
+        assert!(vector::length<String>(&options_arg) > 0, 0);
+        // assert!(exists<InvitationRegistry>(registry_addr), 404);
+        let pools = vector::empty<TestPool2::PredictionMarketPool>(); //create an empty vector of PredictionMarketPool
         let participants_arg = vector::empty<address>(); 
         vector::push_back<address>(&mut participants_arg, signer::address_of(owner)); //add the owner to the participants list
-        assert!(vector::length<String>(&options_arg) > 0, 0);
-        move_to(
-            owner,
-            MarketContainer{
+        let market_cont_1 = MarketContainer{
                 title: title_arg,
                 markets: pools,
                 pre_participant: pre_participant_arg, // list of users whom the invitation will be received
                 participants: participants_arg,
                 options: options_arg, // name of each shares. (e.g. A*, A, B, C)
-            }
+            };
+        move_to(
+            owner,
+            market_cont_1
         );
-        
+        let pos = 0;
+        while (pos < vector::length(&pre_participant_arg)){
+            let market_cont_2 = MarketContainer{
+                    title: title_arg,
+                    markets: vector::empty<TestPool2::PredictionMarketPool>(),
+                    pre_participant: pre_participant_arg, // list of users whom the invitation will be received
+                    participants: participants_arg,
+                    options: options_arg, // name of each shares. (e.g. A*, A, B, C)
+                };
+            new_send_invitation(owner, &market_cont_2, *vector::borrow<address>(&pre_participant_arg, pos), registry_addr);
+            pos = pos + 1;
+        }
     }
 
 
@@ -88,25 +101,25 @@ module movement::TestMarketAbstraction {
         move_to(&invitation_signer, invitation); //return the ownership of the invitation to the owner(resource account)
     }
 
-    fun send_invitation(owner: &signer, market: &MarketContainer, participant: address): address{
-        let participants = market.participants;
-        let owner_addr = signer::address_of(owner);
-        let (invitation_signer, _signer_cap) = account::create_resource_account(owner, b"Invitation Letter");
-        assert!(vector::contains<address>(&participants, &owner_addr), 0);
-        move_to<InvitationObject>(
-            &invitation_signer,
-            InvitationObject{
-                sender: signer::address_of(owner),
-                created_at: 0,
-                participant: participant,
-                seen: false,
-                is_participant: false,
-                is_listed: false,
-            }
-        );
-        return signer::address_of(&invitation_signer)
-    }
-    fun new_respond_invitation(sender: &signer, registry_addr: address, is_participant: bool, is_listed: bool) acquires InvitationRegistry, MarketContainer{
+    // fun send_invitation(owner: &signer, market: &MarketContainer, participant: address): address{
+    //     let participants = market.participants;
+    //     let owner_addr = signer::address_of(owner);
+    //     let (invitation_signer, _signer_cap) = account::create_resource_account(owner, b"Invitation Letter");
+    //     assert!(vector::contains<address>(&participants, &owner_addr), 0);
+    //     move_to<InvitationObject>(
+    //         &invitation_signer,
+    //         InvitationObject{
+    //             sender: signer::address_of(owner),
+    //             created_at: 0,
+    //             participant: participant,
+    //             seen: false,
+    //             is_participant: false,
+    //             is_listed: false,
+    //         }
+    //     );
+    //     return signer::address_of(&invitation_signer)
+    // }
+    fun new_respond_invitation(sender: &signer, registry_addr: address, is_participant: bool, is_listed: bool) acquires MarketContainer, InvitationRegistry{
         let invitation_registry = borrow_global_mut<InvitationRegistry>(registry_addr);
         assert!(table::contains(&invitation_registry.invitations, signer::address_of(sender)), 1);
         let invitation_vector = table::borrow_mut(&mut invitation_registry.invitations, signer::address_of(sender));
@@ -163,24 +176,36 @@ module movement::TestMarketAbstraction {
     
     #[test(account = @movement)]
     #[expected_failure(abort_code = 0)]
-    public fun test_create_market_place_1(account: &signer){
-        create_market_place(account, utf8(b"Test"), vector::empty<address>(), vector::empty<String>());
+    public fun test_create_market_place_1(account: &signer) acquires InvitationObject, InvitationRegistry{
+        create_market_place(account, utf8(b"Test"), vector::empty<address>(), vector::empty<String>(), @bocchi);
     }
-    #[test(account = @movement)]
+    #[test(account = @kita)]
     #[expected_failure(abort_code = 0)]
-    public fun test_create_market_place_2(account: &signer){
+    public fun test_create_market_place_2(account: &signer) acquires InvitationObject, InvitationRegistry{
         let participants = vector::empty<address>();
-        vector::push_back<address>(&mut participants, @default);
-        create_market_place(account, utf8(b"Test"), participants, vector::empty<String>());
+        vector::push_back<address>(&mut participants, @nijika);
+        create_market_place(account, utf8(b"Test"), participants, vector::empty<String>(), @bocchi);
     }
-    #[test(account = @movement)]
-    fun test_create_market_place_3(account: &signer){
+    #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
+    // test fails as there is no init function
+    fun test_create_market_place_3(account0: &signer) acquires InvitationObject, InvitationRegistry{
         let participants = vector::empty<address>();
-        vector::push_back<address>(&mut participants, @default);
+        vector::push_back<address>(&mut participants, @nijika);
         let shares = vector::empty<String>();
         vector::push_back<String>(&mut shares, utf8(b"A*"));
         vector::push_back<String>(&mut shares, utf8(b"A"));
-        create_market_place(account, utf8(b"Test"), participants, shares);
+        create_market_place(account0, utf8(b"Test"), participants, shares, @bocchi);
+    }
+
+    #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
+    fun test_create_market_place_4(account0: &signer, account1: &signer) acquires InvitationObject, InvitationRegistry{
+        init_module(account0);
+        let participants = vector::empty<address>();
+        vector::push_back<address>(&mut participants, @nijika);
+        let shares = vector::empty<String>();
+        vector::push_back<String>(&mut shares, utf8(b"A*"));
+        vector::push_back<String>(&mut shares, utf8(b"A"));
+        create_market_place(account1, utf8(b"Test"), participants, shares, @bocchi);
     }
     #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
     fun check_mailbox_2(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer{
@@ -190,11 +215,11 @@ module movement::TestMarketAbstraction {
         let shares = vector::empty<String>();
         vector::push_back<String>(&mut shares, utf8(b"A*"));
         vector::push_back<String>(&mut shares, utf8(b"A"));
-        create_market_place(account1, utf8(b"Test"), participants, shares);
+        print(&utf8(b"hello_from_check_mailbox2"));
+        create_market_place(account1, utf8(b"Test"), participants, shares, @bocchi);
         assert!(vector::length<address>(&borrow_global<MarketContainer>(@kita).participants) == 1, 0);
         assert!(vector::length<address>(&borrow_global<MarketContainer>(@kita).pre_participant) == 1, 0);
         // when user sent the invitation the length should be incremented by 1
-        new_send_invitation(account1, borrow_global<MarketContainer>(@kita), @nijika, @bocchi);
         assert!(table::contains(&borrow_global<InvitationRegistry>(@bocchi).invitations, @nijika), 0);
         let inv_vec = table::borrow(&borrow_global<InvitationRegistry>(@bocchi).invitations, @nijika);
         assert!(vector::length<InvitationObject>(inv_vec) == 1, 0);
