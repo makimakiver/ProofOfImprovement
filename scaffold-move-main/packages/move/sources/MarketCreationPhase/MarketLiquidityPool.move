@@ -1,4 +1,4 @@
-module movement::TestPool2{
+module movement::PoILiquidityPool{
     use std::debug::print;
     use std::signer;
     use std::string::{Self, utf8, String};
@@ -65,6 +65,7 @@ module movement::TestPool2{
         assert!(vector::length(&names) > 1, 0);
         assert!(vector::length(&names) == vector::length(&symbols), 0);
         let num_of_token = vector::length<String>(&names);
+        let pos = 0;
         let yes_constructor_ref = object::create_named_object(
             sender,
             *string::bytes(vector::borrow(&names, 0)) //changed
@@ -91,12 +92,49 @@ module movement::TestPool2{
         });
 
         let user_token_amount = (MOVE_AMOUNT as u128)*(INITIAL_TOKEN_PER_APT as u128)/(APT_MULTIPLIER as u128);
+        assert!((user_token_amount * 2) <= (MAX_SUPPLY as u128), 0);
         let token_amount = user_token_amount / (num_of_token as u128);
         let token_amount_vector = vector::singleton<u64>((token_amount as u64));
         // assert!((user_token_amount * 2) <= (MAX_SUPPLY as u128), 0);
         // minting both tokens to users
-        assert!((user_token_amount * 2) <= (MAX_SUPPLY as u128), 0);
         mint_tokens(sender, *vector::borrow(&token_metadata_vector, 0), (*vector::borrow(&token_amount_vector, 0) as u64));
+        pos = pos + 1;
+        while (pos < vector::length<String>(&names)){
+            yes_constructor_ref = object::create_named_object(
+                sender,
+                *string::bytes(vector::borrow(&names, pos)) //changed
+            );
+            yes_object_signer = object::generate_signer(&yes_constructor_ref);
+            // create a new pool for the prediction market
+            primary_fungible_store::create_primary_store_enabled_fungible_asset(
+                &yes_constructor_ref,
+                option::some((MAX_SUPPLY as u128)),
+                *vector::borrow(&names, pos), //changed
+                *vector::borrow(&symbols, pos), //changed
+                DECIMAL, //changed
+                utf8(b" "), //changed
+                utf8(b" ") //changed
+            );
+            yes_ticket_object = object::object_from_constructor_ref<Metadata>(&yes_constructor_ref);
+            vector::push_back(&mut token_metadata_vector, (yes_ticket_object));
+            // Setup token controller
+            move_to(&yes_object_signer, PredictionMarketControl {
+                admin_address: sender_addr,
+                mint_ref: fungible_asset::generate_mint_ref(&yes_constructor_ref),
+                burn_ref: fungible_asset::generate_burn_ref(&yes_constructor_ref),
+                transfer_ref: fungible_asset::generate_transfer_ref(&yes_constructor_ref),
+            });
+
+            user_token_amount = (MOVE_AMOUNT as u128)*(INITIAL_TOKEN_PER_APT as u128)/(APT_MULTIPLIER as u128);
+            assert!((user_token_amount * 2) <= (MAX_SUPPLY as u128), 0);
+            token_amount = user_token_amount / (num_of_token as u128);
+            vector::push_back(&mut token_amount_vector, ((token_amount as u64)));
+            // assert!((user_token_amount * 2) <= (MAX_SUPPLY as u128), 0);
+            // minting both tokens to users
+            mint_tokens(sender, *vector::borrow(&token_metadata_vector, pos), (*vector::borrow(&token_amount_vector, pos) as u64));
+            pos = pos + 1;
+
+        };
         // initialize the liquidity pool
         initialize_liquidity_pool(sender, token_metadata_vector, token_amount_vector, MOVE_AMOUNT);
         
