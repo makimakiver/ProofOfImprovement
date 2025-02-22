@@ -1,69 +1,133 @@
 "use client";
 
-import Link from "next/link";
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { useRouter } from "next/navigation";
 import type { NextPage } from "next";
-import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { Address } from "~~/components/scaffold-move";
+
+interface Competition {
+  id: string;
+  title: string;
+  participants: number;
+  startDate: Date;
+  endDate: Date;
+}
 
 const Home: NextPage = () => {
-  const { account: connectedAccount } = useWallet();
+  const router = useRouter();
+
+  const competitions: Competition[] = [
+    {
+      id: '1',
+      title: 'Summer Trading Championship',
+      participants: 1234,
+      startDate: new Date('2025-06-01'),
+      endDate: new Date('2025-08-31'),
+    },
+    {
+      id: '2',
+      title: 'Crypto Prediction Challenge',
+      participants: 856,
+      startDate: new Date('2025-03-15'),
+      endDate: new Date('2025-04-15'),
+    },
+    {
+      id: '3',
+      title: 'Winter Trading Contest',
+      participants: 2145,
+      startDate: new Date('2024-12-01'),
+      endDate: new Date('2025-01-31'),
+    },
+    {
+      id: '4',
+      title: 'Spring Forex Championship',
+      participants: 1567,
+      startDate: new Date('2024-04-01'),
+      endDate: new Date('2024-05-31'),
+    },
+  ];
+
+  const now = new Date();
+  const upcomingCompetitions = competitions.filter(comp => comp.startDate > now);
+  const pastCompetitions = competitions.filter(comp => comp.endDate < now);
+
+  const CompetitionCard = ({ competition, isPast }: { competition: Competition; isPast: boolean }) => (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="font-medium text-lg text-gray-900">{competition.title}</h3>
+          <div className="mt-1 text-sm text-gray-500">
+            {competition.startDate.toLocaleDateString()} - {competition.endDate.toLocaleDateString()}
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="text-sm font-medium text-gray-900">{competition.participants.toLocaleString()}</div>
+          <div className="text-sm text-gray-500">participants</div>
+        </div>
+      </div>
+      
+      <div className="flex gap-2">
+        {isPast ? (
+          <>
+            <button className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
+              View Results
+            </button>
+            <button className="flex-1 px-4 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors">
+              View Analysis
+            </button>
+          </>
+        ) : (
+          <>
+            <button onClick={() => router.push("/predicting")} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+              Join Competition
+            </button>
+            <button className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
+              Learn More
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
 
   return (
-    <>
-      <div className="flex items-center flex-col flex-grow pt-10">
-        <div className="px-5">
-          <h1 className="text-center">
-            <span className="block text-2xl mb-2">Welcome to</span>
-            <span className="block text-4xl font-bold">Scaffold Move</span>
-          </h1>
-          <div className="flex justify-center items-center space-x-2 flex-col sm:flex-row">
-            <p className="my-2 font-medium">Connected Address:</p>
-
-            <Address address={connectedAccount?.address} />
+<div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-2xl font-bold text-gray-900 mb-8">Competitions Dashboard</h1>
+        
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Upcoming Competitions</h2>
+            <div className="text-sm text-gray-500">{upcomingCompetitions.length} competitions</div>
           </div>
-          <p className="text-center text-lg">
-            Get started by editing{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/nextjs/app/page.tsx
-            </code>
-          </p>
-          <p className="text-center text-lg">
-            Edit your Move module{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              OnchainBio.move
-            </code>{" "}
-            in{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/move/sources
-            </code>
-          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {upcomingCompetitions.map(competition => (
+              <CompetitionCard key={competition.id} competition={competition} isPast={false} />
+            ))}
+            {upcomingCompetitions.length === 0 && (
+              <div className="col-span-2 text-center py-8 text-gray-500">
+                No upcoming competitions at the moment
+              </div>
+            )}
+          </div>
         </div>
-
-        <div className="flex-grow bg-base-300 w-full mt-16 px-8 py-12">
-          <div className="flex justify-center items-center gap-12 flex-col sm:flex-row">
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <BugAntIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Tinker with your Move modules using the{" "}
-                <Link href="/debug" passHref className="link">
-                  Debug Modules
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <MagnifyingGlassIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Explore your local transactions with the {/* <Link href="/blockexplorer" passHref className="link"> */}
-                Block Explorer {/* </Link>{" "} */}
-                tab. <b>Coming soon...</b>
-              </p>
-            </div>
+        
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Past Competitions</h2>
+            <div className="text-sm text-gray-500">{pastCompetitions.length} competitions</div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            {pastCompetitions.map(competition => (
+              <CompetitionCard key={competition.id} competition={competition} isPast={true} />
+            ))}
+            {pastCompetitions.length === 0 && (
+              <div className="col-span-2 text-center py-8 text-gray-500">
+                No past competitions
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
