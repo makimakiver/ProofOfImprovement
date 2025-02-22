@@ -330,6 +330,6 @@ module movement::TestMarketAbstraction {
         send_invitation(account3, kita_virtual, @ryo, @bocchi);
     }
 }
-    // limitation 1, Users cannot call the create_market_place for twice
+    // limitation 1, Users cannot call the create_market_place for twice: solved
     // limitation 2, the program cannot identify whether or not the registry account exists or not in the specified resource account
     // due to the in-copiability of the object
