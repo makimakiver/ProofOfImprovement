@@ -57,6 +57,38 @@ module movement::TestMarketAbstraction {
     //         address_to_market_place: table::new(),
     //     });
     // }
+    public entry fun neo_create_market_place(owner: &signer, title_arg: String, pre_participant_arg: vector<address>, options_arg: vector<String>, registry_addr: address) acquires InvitationObject, InvitationRegistry{
+        assert!(vector::length<address>(&pre_participant_arg) > 0, 0); //check if the User is not sending the invitation to anyone
+        assert!(vector::length<String>(&options_arg) > 0, 0);
+        let (market_place_signer, _signer_cap) = account::create_resource_account(owner, *string::bytes(&title_arg)); //create a resource account for the invitation to be stored
+        // assert!(exists<InvitationRegistry>(registry_addr), 404);
+        let pools = vector::empty<PoILiquidityPool::PredictionMarketPool>(); //create an empty vector of PredictionMarketPool
+        let participants_arg = vector::empty<address>(); 
+        vector::push_back<address>(&mut participants_arg, signer::address_of(owner)); //add the owner to the participants list
+        let market_cont_1 = MarketContainer{
+                title: title_arg,
+                markets: pools,
+                pre_participant: pre_participant_arg, // list of users whom the invitation will be received
+                participants: participants_arg,
+                options: options_arg, // name of each shares. (e.g. A*, A, B, C)
+            };
+        move_to(
+            &market_place_signer,
+            market_cont_1
+        );
+        let pos = 0;
+        while (pos < vector::length(&pre_participant_arg)){
+            let market_cont_2 = MarketContainer{
+                    title: title_arg,
+                    markets: vector::empty<PoILiquidityPool::PredictionMarketPool>(),
+                    pre_participant: pre_participant_arg, // list of users whom the invitation will be received
+                    participants: participants_arg,
+                    options: options_arg, // name of each shares. (e.g. A*, A, B, C)
+                };
+            new_send_invitation(&market_place_signer, &market_cont_2, *vector::borrow<address>(&pre_participant_arg, pos), registry_addr, signer::address_of(owner));
+            pos = pos + 1;
+        };
+    }
     fun create_market_place(owner: &signer, title_arg: String, pre_participant_arg: vector<address>, options_arg: vector<String>, registry_addr: address): address acquires InvitationObject, InvitationRegistry{
         assert!(vector::length<address>(&pre_participant_arg) > 0, 0); //check if the User is not sending the invitation to anyone
         assert!(vector::length<String>(&options_arg) > 0, 0);
@@ -121,7 +153,7 @@ module movement::TestMarketAbstraction {
         move_to(&invitation_signer, invitation); //return the ownership of the invitation to the owner(resource account)
     }
 
-    fun send_invitation(owner: &signer, market_addr: address, participant: address, registry_addr: address)acquires MarketContainer, InvitationObject, InvitationRegistry{
+    public entry fun send_invitation(owner: &signer, market_addr: address, participant: address, registry_addr: address)acquires MarketContainer, InvitationObject, InvitationRegistry{
         let owner_addr = signer::address_of(owner);
         let market = borrow_global<MarketContainer>(market_addr);
         let participants = market.participants;

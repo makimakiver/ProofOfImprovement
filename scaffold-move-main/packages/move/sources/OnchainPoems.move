@@ -1,4 +1,4 @@
-module deployment_addr::onchain_poems {
+module movement::onchain_poems {
 
   use std::string::{String};
 
