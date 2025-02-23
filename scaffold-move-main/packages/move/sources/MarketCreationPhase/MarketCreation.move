@@ -2,6 +2,7 @@ module movement::TestMarketAbstraction {
     use std::debug::print;
     use std::vector;
     use std::signer;
+    use std::bcs;
     use std::string::{Self, String, utf8};
     use aptos_framework::event;
     use aptos_framework::account;
@@ -49,7 +50,13 @@ module movement::TestMarketAbstraction {
             invitations: table::new(),
         });
     }
-
+    // fun init_module_2(admin: &signer) {
+    //     let admin_addr = signer::address_of(admin); 
+    //     // transfer the ownership of Registry to the admin and let the object to be stored in the admin's account
+    //     move_to(admin, AddressMarketConnection {
+    //         address_to_market_place: table::new(),
+    //     });
+    // }
     fun create_market_place(owner: &signer, title_arg: String, pre_participant_arg: vector<address>, options_arg: vector<String>, registry_addr: address): address acquires InvitationObject, InvitationRegistry{
         assert!(vector::length<address>(&pre_participant_arg) > 0, 0); //check if the User is not sending the invitation to anyone
         assert!(vector::length<String>(&options_arg) > 0, 0);
@@ -89,7 +96,7 @@ module movement::TestMarketAbstraction {
         let participants = get_participants(market); 
         let owner_addr = signer::address_of(owner);
         assert!(vector::contains<address>(&participants, &sender), 0);
-        let (invitation_signer, _signer_cap) = account::create_resource_account(owner, b"InvitationLetter"); //create a resource account for the invitation to be stored
+        let (invitation_signer, _signer_cap) = account::create_resource_account(owner, bcs::to_bytes(&participant)); //create a resource account for the invitation to be stored
         move_to<InvitationObject>(
             &invitation_signer,
             InvitationObject{
@@ -119,7 +126,7 @@ module movement::TestMarketAbstraction {
         let market = borrow_global<MarketContainer>(market_addr);
         let participants = market.participants;
         assert!(vector::contains<address>(&participants, &owner_addr), 0);
-        let (invitation_signer, _signer_cap) = account::create_resource_account(owner, b"Invitation Letter");
+        let (invitation_signer, _signer_cap) = account::create_resource_account(owner, bcs::to_bytes(&participant));
         move_to<InvitationObject>(
             &invitation_signer,
             InvitationObject{
@@ -329,7 +336,27 @@ module movement::TestMarketAbstraction {
         assert!(vector::length<InvitationObject>(inv_vec_2) == 0, 0);
         send_invitation(account3, kita_virtual, @ryo, @bocchi);
     }
+  #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
+    fun check_mailbox_5(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer{
+        init_module(account0);
+        let participants = vector::empty<address>();
+        vector::push_back<address>(&mut participants, @nijika);
+        vector::push_back<address>(&mut participants, @ryo);
+        let shares = vector::empty<String>();
+        vector::push_back<String>(&mut shares, utf8(b"A*"));
+        vector::push_back<String>(&mut shares, utf8(b"A"));
+        print(&utf8(b"hello_from_check_mailbox2"));
+        let kita_virtual = create_market_place(account1, utf8(b"Test"), participants, shares, @bocchi);
+        assert!(vector::length<address>(&borrow_global<MarketContainer>(kita_virtual).participants) == 1, 0);
+        assert!(vector::length<address>(&borrow_global<MarketContainer>(kita_virtual).pre_participant) == 2, 0);
+        // when user sent the invitation the length should be incremented by 1
+        assert!(table::contains(&borrow_global<InvitationRegistry>(@bocchi).invitations, @nijika), 0);
+        let inv_vec = table::borrow(&borrow_global<InvitationRegistry>(@bocchi).invitations, @nijika);
+        assert!(vector::length<InvitationObject>(inv_vec) == 1, 0);
+        new_respond_invitation(account2, @bocchi, true, true);
+        assert!(vector::length<address>(&borrow_global<MarketContainer>(kita_virtual).participants) == 2, 0);
+        assert!(vector::length<address>(&borrow_global<MarketContainer>(kita_virtual).pre_participant) == 1, 0);
+        let inv_vec_2 = table::borrow(&borrow_global<InvitationRegistry>(@bocchi).invitations, @nijika);
+        assert!(vector::length<InvitationObject>(inv_vec_2) == 0, 0);
+    }
 }
-    // limitation 1, Users cannot call the create_market_place for twice: solved
-    // limitation 2, the program cannot identify whether or not the registry account exists or not in the specified resource account
-    // due to the in-copiability of the object
