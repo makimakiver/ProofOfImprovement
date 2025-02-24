@@ -17,8 +17,10 @@ module movement::PoILiquidityPool{
     const FEE: u64 = 10_000_000;
     const MAX_SUPPLY: u64 = 100_000_000_000_000_000;
     const MOVE_AMOUNT: u64 = 100_000_000;
-    const INITIAL_TOKEN_PER_APT: u64 = 5_000_000_000_000;
+    const INITIAL_TOKEN_PER_APT: u64 = 5_000_000_000_000_000;
+    const TOKEN_AMOUNT: u64 = 1_000;
     const APT_MULTIPLIER: u64 = 100_000_000;
+    const E: u64 = 271_828;
 
     // Error codes
     const INSUFFICIENT_LIQUIDITY: u64 = 1;
@@ -149,7 +151,7 @@ module movement::PoILiquidityPool{
             vector::push_back(&mut token_amount_vector, ((token_amount as u64)));
             // assert!((user_token_amount * 2) <= (MAX_SUPPLY as u128), 0);
             // minting both tokens to users
-            mint_tokens(sender, *vector::borrow(&token_metadata_vector, pos), (*vector::borrow(&token_amount_vector, pos) as u64));
+            mint_tokens(sender, *vector::borrow(&token_metadata_vector, pos), 100_000_000);
             pos = pos + 1;
 
         };
@@ -158,12 +160,14 @@ module movement::PoILiquidityPool{
         
         // Object has been cloned and the error occured
     }
+
     fun mint_tokens(sender: &signer, token: Object<Metadata>, amount: u64) acquires PredictionMarketControl{
         let token_addr = object::object_address(&token);
         let control = borrow_global<PredictionMarketControl>(token_addr);
         let fa = fungible_asset::mint(&control.mint_ref, amount);
         primary_fungible_store::deposit(signer::address_of(sender), fa);
     }
+
     fun initialize_liquidity_pool(sender: &signer, title: String, token_vector: vector<Object<Metadata>>, token_amount_vector: vector<u64>, move_amount: u64, pool_signer: signer, signer_cap: SignerCapability) acquires PredictionMarketControl{
         // Register the APT coin store for pool
         let pos = 0;
@@ -198,12 +202,24 @@ module movement::PoILiquidityPool{
             }
         );
     }
-    // Swap MOVE for tokens
-    public entry fun swap_move_to_token(
+    public entry fun buy_ticket(
         sender: &signer,
         pool_addr: address,
         token_idx: u64,
-        move_amount: u64
+        ticket_amount: u64,
+        market_addr: address,
+    )acquires PredictionMarketPool{
+        assert!(ticket_amount > 0, ERR_ZERO_AMOUNT);
+        let move_amount = total_cost_calculator_in_move_when_swapping_move_to_token_and_change_reserve(ticket_amount, token_idx, market_addr);
+        swap_move_to_token(sender, market_addr, token_idx, move_amount, ticket_amount);
+    }
+    // Swap MOVE for tokens
+    fun swap_move_to_token(
+        sender: &signer,
+        pool_addr: address,
+        token_idx: u64,
+        move_amount: u64,
+        token_out: u64,
     ) acquires PredictionMarketPool {
         assert!(move_amount > 0, ERR_ZERO_AMOUNT);
         let lp = borrow_global_mut<PredictionMarketPool>(pool_addr);
@@ -211,11 +227,11 @@ module movement::PoILiquidityPool{
         let token_address = vector::borrow(&lp.tokens_metadata, token_idx);
 
         // Calculate output tokens
-        let token_out = get_output_amount(
-            move_amount,
-            lp.move_reserve,
-            *token_reserve
-        );
+        // let token_out = get_output_amount(
+        //     move_amount,
+        //     lp.move_reserve,
+        //     *token_reserve
+        // );
 
         assert!(token_out > 0, INSUFFICIENT_LIQUIDITY);
 
@@ -230,12 +246,12 @@ module movement::PoILiquidityPool{
             &pool_signer,
             *token_address,
             signer::address_of(sender),
-            token_out
+            token_out*100_000_000,
         );
         // Update reserves
 
         lp.move_reserve = lp.move_reserve + move_amount;
-        *token_reserve = *token_reserve - token_out;
+        // *token_reserve = *token_reserve - token_out;
     }
 
     // Swap tokens for MOVE
@@ -250,13 +266,17 @@ module movement::PoILiquidityPool{
         let lp = borrow_global_mut<PredictionMarketPool>(pool_addr);
         let token_reserve = vector::borrow_mut(&mut lp.tokens, token_idx);
         let token_address = vector::borrow(&lp.tokens_metadata, token_idx);
-        // Calculate MOVE output
-        let move_out = get_output_amount(
-            token_amount,
-            *token_reserve,
-            lp.move_reserve
-        );
+        // // Calculate MOVE output
+        // let move_out = get_output_amount(
+        //     token_amount,
+        //     *token_reserve,
+        //     lp.move_reserve
+        // );
 
+        let cost_of_ticket = 100_000_000 / vector::length<u64>(&lp.tokens);
+        let move_out = cost_of_ticket * token_amount;
+        let token_reserve = vector::borrow_mut(&mut lp.tokens, token_idx);
+        
         assert!(move_out > 0, INSUFFICIENT_LIQUIDITY);
 
         // Transfer tokens to pool
@@ -264,7 +284,7 @@ module movement::PoILiquidityPool{
             sender,
             *token_address,
             pool_addr,
-            token_amount
+            token_amount*100_000_000
         );
 
         let pool_signer = account::create_signer_with_capability(&lp.signer_cap);
@@ -287,6 +307,29 @@ module movement::PoILiquidityPool{
         let numerator = input_amount_with_fee * (output_reserve as u128);
         let denominator = (input_reserve as u128) * 1000 + input_amount_with_fee;
         ((numerator / denominator) as u64)
+    }
+
+    fun total_cost_calculator_in_move_when_swapping_move_to_token_and_change_reserve(
+        desired_output_amount: u64,
+        token_idx: u64,
+        market_addr: address,
+    ): u64 acquires PredictionMarketPool{
+        let lp = borrow_global_mut<PredictionMarketPool>(market_addr);
+        let cost_of_ticket = 100_000_000 / vector::length<u64>(&lp.tokens);
+        let total_cost = cost_of_ticket * desired_output_amount;
+        let token_reserve = vector::borrow_mut(&mut lp.tokens, token_idx);
+        *token_reserve = *token_reserve - desired_output_amount;
+        return total_cost
+    }
+
+    #[view]
+    fun total_cost_calculator_in_move_when_swapping_move_to_token(
+        desired_output_amount: u64,
+        token_reserve: vector<u64>,
+    ): u64 {
+        let cost_of_ticket = 100_000_000 / vector::length<u64>(&token_reserve);
+        let total_cost = cost_of_ticket * desired_output_amount;
+        return total_cost
     }
 
     #[test (account=@movement)]
@@ -314,7 +357,4 @@ module movement::PoILiquidityPool{
 //      [title].        "Hello world"
 // [name of the ticket] ["getting_A*", "getting_A", "getting_B", "getting_C", "getting_D", "getting_E"]
 //      [symbol]        ["A*", "A", "B", "C", "D", "E"]
-
-
-
 
