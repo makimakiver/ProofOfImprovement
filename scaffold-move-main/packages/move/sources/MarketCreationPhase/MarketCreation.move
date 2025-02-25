@@ -21,6 +21,9 @@ module movement::TestMarketAbstraction {
         invitations: table::Table<address, vector<InvitationObject>>,
     }
 
+    struct UserDataRegistry has key{
+        markets_available: table::Table<address, vector<address>>,
+    }
     // // store an object which will store a mapping between the invitation and the participant
     // struct AddressMarketConnection has key{
     //     // from address of the recepient to the list of InvitationObject
@@ -81,6 +84,9 @@ module movement::TestMarketAbstraction {
         // transfer the ownership of Registry to the admin and let the object to be stored in the admin's account
         move_to(admin, InvitationRegistry {
             invitations: table::new(),
+        });
+        move_to(admin, UserDataRegistry {
+            markets_available: table::new(),
         });
     }
     // fun init_module_2(admin: &signer) {
@@ -202,7 +208,9 @@ module movement::TestMarketAbstraction {
         };
         move_to(&invitation_signer, invitation); //return the ownership of the invitation to the owner(resource account)
     }
-    fun new_respond_invitation(sender: &signer, registry_addr: address, is_participant: bool, is_listed: bool) acquires MarketContainer, InvitationRegistry{
+
+    // will pass the index of the index stored
+    fun new_respond_invitation(sender: &signer, registry_addr: address, is_participant: bool, is_listed: bool, res_idx: u64) acquires MarketContainer, InvitationRegistry, UserDataRegistry{
         let invitation_registry = borrow_global_mut<InvitationRegistry>(registry_addr);
         assert!(table::contains(&invitation_registry.invitations, signer::address_of(sender)), 1);
         let invitation_vector = table::borrow_mut(&mut invitation_registry.invitations, signer::address_of(sender));
@@ -217,6 +225,14 @@ module movement::TestMarketAbstraction {
         respond_invitation.is_listed = is_listed;
         if (is_participant){
             enter_invitation_response(sender, respond_invitation.market_address);
+            let registry = borrow_global_mut<UserDataRegistry>(registry_addr);
+            if (table::contains(&registry.markets_available, signer::address_of(sender))){ // if the participant already has received an invitation before
+                let inv_vec = table::borrow_mut(&mut registry.markets_available, signer::address_of(sender));
+                vector::push_back<address>(inv_vec, respond_invitation.market_address); //add the invitation to the list of the invitation
+            }else{
+                let inv_vec = vector::singleton<address>(respond_invitation.market_address);
+                table::add(&mut registry.markets_available, signer::address_of(sender), inv_vec); //add the new mapping between the participant and the invitation
+            };
         };
         let invitation_registry_2 = borrow_global_mut<InvitationRegistry>(registry_addr);
         assert!(table::contains(&invitation_registry_2.invitations, signer::address_of(sender)), 1);
@@ -460,7 +476,7 @@ module movement::TestMarketAbstraction {
         create_market_place(account1, utf8(b"Test2"), participants, shares, @bocchi);
     }
     #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
-    fun check_mailbox_2(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer{
+    fun check_mailbox_2(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer, UserDataRegistry{
         init_module(account0);
         let participants = vector::empty<address>();
         vector::push_back<address>(&mut participants, @nijika);
@@ -482,7 +498,7 @@ module movement::TestMarketAbstraction {
         assert!(vector::length<InvitationObject>(inv_vec_2) == 0, 0);
     }
     #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
-    fun check_mailbox_3(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer{
+    fun check_mailbox_3(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer, UserDataRegistry{
         init_module(account0);
         let participants = vector::empty<address>();
         vector::push_back<address>(&mut participants, @nijika);
@@ -511,7 +527,7 @@ module movement::TestMarketAbstraction {
     }
     #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
     #[expected_failure(abort_code = 0)]
-    fun check_mailbox_4(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer{
+    fun check_mailbox_4(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer, UserDataRegistry{
         init_module(account0);
         let participants = vector::empty<address>();
         vector::push_back<address>(&mut participants, @nijika);
@@ -534,7 +550,7 @@ module movement::TestMarketAbstraction {
         send_invitation(account3, kita_virtual, @ryo, @bocchi);
     }
     #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
-    fun check_mailbox_5(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer{
+    fun check_mailbox_5(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, MarketContainer, UserDataRegistry{
         init_module(account0);
         let participants = vector::empty<address>();
         vector::push_back<address>(&mut participants, @nijika);
@@ -561,7 +577,7 @@ module movement::TestMarketAbstraction {
 
 ////////Market Validation Test ////////////
     #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
-    fun test_send_validation(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, ValidationObject, ValidationRegistry, MarketContainer, ValidationAttachment{
+    fun test_send_validation(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, ValidationObject, ValidationRegistry, MarketContainer, ValidationAttachment, UserDataRegistry{
         init_module(account0);
         initialise_validation_reg_mod(account0);
         let participants = vector::empty<address>();
@@ -581,7 +597,7 @@ module movement::TestMarketAbstraction {
 
     #[test(account0 = @bocchi, account1 = @kita, account2 = @nijika, account3 = @ryo)]
     #[expected_failure(abort_code = 0)]
-    fun test_send_validation_2(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, ValidationObject, ValidationRegistry, MarketContainer, ValidationAttachment{
+    fun test_send_validation_2(account0: &signer, account1: &signer, account2: &signer, account3: &signer) acquires InvitationObject, InvitationRegistry, ValidationObject, ValidationRegistry, MarketContainer, ValidationAttachment, UserDataRegistry{
         init_module(account0);
         initialise_validation_reg_mod(account0);
         let participants = vector::empty<address>();

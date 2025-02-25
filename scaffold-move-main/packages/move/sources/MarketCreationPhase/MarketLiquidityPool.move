@@ -72,7 +72,7 @@ module movement::PoILiquidityPool{
     }
 
     // create a tickets for the prediction market
-    public entry fun create_ticket_and_buy(sender: &signer, title_arg: String, names: vector<String>, symbols: vector<String>) acquires MarketCreationReceipt, PredictionMarketControl{
+    public fun create_ticket_and_buy(sender: &signer, title_arg: String, names: vector<String>, symbols: vector<String>) acquires MarketCreationReceipt, PredictionMarketControl{
         // symbols and names can be immutable reference to the variable(can be "&vector<String>")
         let receipt = borrow_global<MarketCreationReceipt>(@movement);
         let admin_addr = receipt.admin;
@@ -156,7 +156,7 @@ module movement::PoILiquidityPool{
 
         };
         // initialize the liquidity pool
-        initialize_liquidity_pool(sender, title_arg, token_metadata_vector, token_amount_vector, MOVE_AMOUNT, pool_signer, signer_cap);
+        initialize_liquidity_pool(sender, title_arg, token_metadata_vector, token_amount_vector, MOVE_AMOUNT, pool_signer, signer_cap)
         
         // Object has been cloned and the error occured
     }
@@ -201,6 +201,15 @@ module movement::PoILiquidityPool{
                 title: title,
             }
         );
+        // return PredictionMarketPool {
+        //     tokens: token_amount_vector,
+        //     tokens_metadata: token_vector,
+        //     owner: signer::address_of(sender),
+        //     signer_cap: signer_cap,
+        //     move_reserve: move_amount,
+        //     title: title,
+        // }
+        
     }
     public entry fun buy_ticket(
         sender: &signer,
@@ -325,9 +334,10 @@ module movement::PoILiquidityPool{
     #[view]
     fun total_cost_calculator_in_move_when_swapping_move_to_token(
         desired_output_amount: u64,
-        token_reserve: vector<u64>,
-    ): u64 {
-        let cost_of_ticket = 100_000_000 / vector::length<u64>(&token_reserve);
+        market_addr: address,
+    ): u64 acquires PredictionMarketPool {
+        let lp = borrow_global_mut<PredictionMarketPool>(market_addr);
+        let cost_of_ticket = 100_000_000 / vector::length<u64>(&lp.tokens);
         let total_cost = cost_of_ticket * desired_output_amount;
         return total_cost
     }
@@ -354,6 +364,14 @@ module movement::PoILiquidityPool{
     }
 
 }
+//      [title].        "Hello world"
+// [name of the ticket] ["getting_A*", "getting_A", "getting_B", "getting_C", "getting_D", "getting_E"]
+//      [symbol]        ["A*", "A", "B", "C", "D", "E"]
+
+
+
+
+
 //      [title].        "Hello world"
 // [name of the ticket] ["getting_A*", "getting_A", "getting_B", "getting_C", "getting_D", "getting_E"]
 //      [symbol]        ["A*", "A", "B", "C", "D", "E"]
