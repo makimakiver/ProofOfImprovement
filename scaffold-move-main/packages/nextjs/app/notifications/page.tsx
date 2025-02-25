@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from "next/navigation";
 
 const Notifications = () => {
+  const router = useRouter();
+
   const [activeTab, setActiveTab] = useState('invitation');
   
   const markets = [
@@ -72,7 +75,7 @@ const Notifications = () => {
     <div className="space-y-1">
       <MarketItem title={markets[0].title}>
         <div className="flex items-center gap-2">
-          <div className="text-sm font-medium text-gray-700">Submit result</div>
+          <div className="text-sm font-medium text-gray-700 cursor-pointer" onClick={() =>  router.push("/submitresult")}>Submit result</div>
           <div className="text-sm text-gray-500">from <span className="font-mono text-gray-600">{markets[0].publicKey}</span></div>
         </div>
       </MarketItem>
@@ -80,7 +83,7 @@ const Notifications = () => {
       {markets.slice(0, 2).map((market, index) => (
         <MarketItem key={market.id} title={market.title}>
           <div className="flex items-center gap-2">
-            <div className="text-sm font-medium text-gray-700">validate friends</div>
+            <div className="text-sm font-medium text-gray-700 cursor-pointer" onClick={() =>  router.push("/validateresult")}>validate friends</div>
             <div className="text-sm text-gray-500">from <span className="font-mono text-gray-600">{`<Public key${index + 2}>`}</span></div>
           </div>
         </MarketItem>

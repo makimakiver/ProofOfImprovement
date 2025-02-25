@@ -2,8 +2,12 @@
 import React, { useState } from "react";
 import type { NextPage } from "next";
 import styles from "./page.module.css";
+import { useRouter } from "next/navigation";
+
 
 const MarketCreatePage: NextPage = () => {
+  const router = useRouter();
+
   // ----- Hardcoded "previous market" data -----
   const previousMarketData = {
     title: "Old Title",
@@ -64,6 +68,7 @@ const MarketCreatePage: NextPage = () => {
       gradeTypes,
       endDate
     });
+    router.push("/")
   };
 
   return (

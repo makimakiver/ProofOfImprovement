@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import useSubmitTransaction from "~~/hooks/scaffold-move/useSubmitTransaction";
 
 interface PredictionOption {
   outcome: string;
@@ -10,6 +11,8 @@ interface PredictionOption {
 }
 
 const PredictionPage = () => {
+  const { submitTransaction, transactionResponse, transactionInProcess } = useSubmitTransaction("PoILiquidityPool");
+
   const chartData = [
     { date: 'Feb 7', blue: 45, red: 20, green: 10 },
     { date: 'Feb 10', blue: 40, red: 25, green: 12 },
@@ -26,6 +29,19 @@ const PredictionPage = () => {
     { outcome: 'D', chance: 1, moveAmount: 0.01 },
     { outcome: 'E', chance: 1, moveAmount: 0.01 }
   ];
+
+  const buyTicket = async () => {
+    try {
+      await submitTransaction("create_ticket_and_buy", [["1"], ["2"]]);
+
+      // await fetchBio();
+      if (transactionResponse?.transactionSubmitted) {
+        console.log("Transaction successful:", transactionResponse.success ? "success" : "failed");
+      }
+    } catch (error) {
+      console.error("Error registering bio:", error);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
@@ -114,7 +130,7 @@ const PredictionPage = () => {
                   <div className="px-4 py-2">{prediction.outcome}</div>
                   <div className="px-4 py-2">{prediction.chance}%</div>
                   <div className="px-4 py-2 text-right">
-                    <button className="px-3 py-1 border rounded-md hover:bg-gray-50 transition-colors">
+                    <button className="px-3 py-1 border rounded-md hover:bg-gray-50 transition-colors" onClick={buyTicket}>
                       Buy {prediction.moveAmount} Move
                     </button>
                   </div>
