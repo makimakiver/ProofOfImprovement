@@ -4,13 +4,13 @@ version = "1.0.0"
 authors = []
 
 [addresses]
-movement='0xaa14581cd0b661079d3c4161459b9ef36695eb185a498997f91294cfe0298e5a'
+movement='0f2bd361ea1a691890d28de8afc324988a0f7abb782d9fd8885f5064038c7d21'
 default = "6c8e325c2f443a0ffa218daff276d1e2f20db1ab944c85edc64df18ed657b78c"
 bocchi = "42043ec2485174342c3dd9dc1e2c81481f852876b9b3802af4cee6334b955e06"
 kita = "dedab705f513d469df2200f70cb2ca003829da135a1f0f6d6bbc8d886259b2fe"
 nijika = "1fc826b7a9478900611930ad01e86bbb77c25a70927ed2afd28220ea3ddaf913"
 ryo = "bf94fbdb1aaaf9398d06894abda562307f6a7f1c9226dd1058c5cce52aa21967"
-deployment_addr='0xf6f67805e60b18ee9ced00c3f71e030b2487af5480610e9324dd14d6f6b92690'
+# deployment_addr='0xf6f67805e60b18ee9ced00c3f71e030b2487af5480610e9324dd14d6f6b92690'
 [dependencies.AptosFramework]
 git = "https://github.com/movementlabsxyz/aptos-core.git"
 rev = "movement"
