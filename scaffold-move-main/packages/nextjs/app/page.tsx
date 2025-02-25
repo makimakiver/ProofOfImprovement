@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { NextPage } from "next";
+import { Bell } from 'lucide-react';
 
 interface Competition {
   id: string;
@@ -89,10 +90,12 @@ const Home: NextPage = () => {
   );
 
   return (
-<div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Competitions Dashboard</h1>
-        
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Competitions Dashboard</h1>
+          <Bell className="cursor-pointer" onClick={() => router.push("/notifications")} />
+        </div>
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Upcoming Competitions</h2>
