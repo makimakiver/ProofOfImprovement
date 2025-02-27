@@ -3,16 +3,19 @@ import React, { useState } from "react";
 import type { NextPage } from "next";
 import styles from "./page.module.css";
 import { useRouter } from "next/navigation";
-
+import useSubmitTransaction from "~~/hooks/scaffold-move/useSubmitTransaction";
 
 const MarketCreatePage: NextPage = () => {
   const router = useRouter();
 
+  const { submitTransaction, transactionResponse, transactionInProcess } = useSubmitTransaction("TestMarketAbstraction");
+
   // ----- Hardcoded "previous market" data -----
   const previousMarketData = {
-    title: "Old Title",
-    participants: ["0x1234...abcd", "0x5678...efgh"],
-    gradeTypes: ["A", "B", "C"],
+    title: "Math Test",
+    participants: ["0x72e23faea40ad11c7cb9c3a7e680c356e3335e54a3cf37541735c4d5851cac4f"],
+    nameOfTicket: ["Test A", "Test B"],
+    gradeTypes: ["A", "B"],
     endDate: "2025-12-31"
   };
 
@@ -23,6 +26,7 @@ const MarketCreatePage: NextPage = () => {
   const [participants, setParticipants] = useState<string[]>([]);
   const [gradeTypeInput, setGradeTypeInput] = useState("");
   const [gradeTypes, setGradeTypes] = useState<string[]>([]);
+  const [gradeNames, setGradeNames] = useState<string[]>([]);
   const [endDate, setEndDate] = useState("");
 
   // Handler to load the previous market format
@@ -40,6 +44,7 @@ const MarketCreatePage: NextPage = () => {
       setParticipants(previousMarketData.participants);
       setGradeTypes(previousMarketData.gradeTypes);
       setEndDate(previousMarketData.endDate);
+      setGradeNames(previousMarketData.nameOfTicket)
     }
   };
 
@@ -60,15 +65,22 @@ const MarketCreatePage: NextPage = () => {
   };
 
   // Form submission handler
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log({
-      title,
-      participants,
-      gradeTypes,
-      endDate
-    });
-    router.push("/")
+    
+    try {
+      await submitTransaction("new_create_market_place", [title, participants, gradeNames, gradeTypes, "0x81dc8a88ff17e54d1627a999e3400c05317488119198331944f765f49c45cd05"]);
+
+      if (transactionResponse?.transactionSubmitted) {
+        console.log("Transaction successful:", transactionResponse.success ? "success" : "failed");
+      }
+    } catch (error) {
+      console.error("Error creating market place:", error);
+    }
+    
+    console.log(title, participants, gradeNames, gradeTypes, "0x81dc8a88ff17e54d1627a999e3400c05317488119198331944f765f49c45cd05");
+
+    //router.push("/")
   };
 
   return (

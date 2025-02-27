@@ -2,11 +2,23 @@
 
 import React, { useState } from 'react';
 import { useRouter } from "next/navigation";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { useView } from "~~/hooks/scaffold-move/useView";
+import { AddressInput } from "~~/types/scaffold-move";
 
 const Notifications = () => {
   const router = useRouter();
+  const { account } = useWallet();
+
+  const {
+    data: invitations,
+    isLoading: isLoadingBioView,
+    refetch: refetchBioView,
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_invitation", args: [account?.address as AddressInput, "0x81dc8a88ff17e54d1627a999e3400c05317488119198331944f765f49c45cd05"] });
 
   const [activeTab, setActiveTab] = useState('invitation');
+
+  console.log(invitations);
   
   const markets = [
     { id: 1, title: '<Market title1>', publicKey: '<Public key1>', reward: '12.68Move' },
@@ -63,9 +75,9 @@ const Notifications = () => {
 
   const InvitationTab = () => (
     <div className="space-y-1">
-      {markets.map((market) => (
-        <MarketItem key={market.id} title={market.title}>
-          <div className="text-sm text-gray-500">from <span className="font-mono text-gray-600">{market.publicKey}</span></div>
+      {invitations?.map((invitation, i) => (
+        <MarketItem key={i} title={"Exam"}>
+          <div className="text-sm text-gray-500">from <span className="font-mono text-gray-600">{invitation}</span></div>
         </MarketItem>
       ))}
     </div>
