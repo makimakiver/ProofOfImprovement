@@ -6,12 +6,14 @@ module movement::PoILiquidityPool{
     use std::vector;
     use std::bcs;
     use aptos_framework::event;
+    use aptos_framework::table;
     use aptos_framework::account::{Self, SignerCapability};
     use aptos_framework::fungible_asset::{Self, Metadata, MintRef, TransferRef, BurnRef};
     use aptos_framework::object::{Self, Object};
     use aptos_framework::coin::{Self};
     use aptos_framework::aptos_coin::{Self, AptosCoin};
     use aptos_framework::primary_fungible_store;
+    friend movement::TestMarketAbstraction;
 
     const DECIMAL: u8 = 8;
     const FEE: u64 = 10_000_000;
@@ -30,15 +32,30 @@ module movement::PoILiquidityPool{
     const ERR_MAX_SUPPLY_EXCEEDED: u64 = 5;
 
     // create a pool for the prediction market
-    struct PredictionMarketPool has key, store, drop {
+    // create a pool for the prediction market
+    struct PredictionMarketPool has key{
         title: String,
         tokens: vector<u64>, //total supply of yes ticket
         tokens_metadata: vector<Object<Metadata>>, //metadata of yes ticket 
         owner: address, //owner of the pool
         signer_cap: SignerCapability,
         move_reserve: u64, //reserve of move
+        token_out: vector<u64>,
+        user_history: table::Table<address, vector<u64>>,
+        users: vector<address>,
+        market_end: bool
     }
 
+    // struct SupplyRecords has key{
+    //     token_out: vector<u64>,
+    //     user_history: table::Table<address, vector<u64>>,
+    //     users: vector<address>,
+    //     move_reserve: u64,
+    //     market_end: bool,
+    // }
+    struct PostMarketTicketPrice has key{
+        ticket_price: vector<u64>
+    }
     struct MarketCreationReceipt has key {
         fees: u64, //fees for creating the market
         admin: address, //admin of the market
@@ -55,24 +72,18 @@ module movement::PoILiquidityPool{
  
     fun init_module(owner: &signer){
         let admin = signer::address_of(owner);
-        if(!exists<MarketCreationReceipt>(admin)){
-            print(&utf8(b"the market creation receipt does not exist."));
-            print(&utf8(b"thus executed"));
-            move_to(
-                owner,
-                MarketCreationReceipt{
-                    fees: FEE,
-                    admin: admin,
-                }
-            );
-        }
-        else{
-            print(&utf8(b"not executed"));
-        }
+        move_to(
+            owner,
+            MarketCreationReceipt{
+                fees: FEE,
+                admin: admin,
+            }
+        );
+
     }
 
     // create a tickets for the prediction market
-    public fun create_ticket_and_buy(sender: &signer, title_arg: String, names: vector<String>, symbols: vector<String>) acquires MarketCreationReceipt, PredictionMarketControl{
+    public(friend) fun create_ticket_and_buy(sender: &signer, title_arg: String, names: vector<String>, symbols: vector<String>): address acquires MarketCreationReceipt, PredictionMarketControl{
         // symbols and names can be immutable reference to the variable(can be "&vector<String>")
         let receipt = borrow_global<MarketCreationReceipt>(@movement);
         let admin_addr = receipt.admin;
@@ -117,7 +128,7 @@ module movement::PoILiquidityPool{
         let token_amount_vector = vector::singleton<u64>((token_amount as u64));
         // assert!((user_token_amount * 2) <= (MAX_SUPPLY as u128), 0);
         // minting both tokens to users
-        mint_tokens(sender, *vector::borrow(&token_metadata_vector, 0), (*vector::borrow(&token_amount_vector, 0) as u64));
+        mint_tokens(sender, vector::borrow(&token_metadata_vector, 0), 100_000_000);
         pos = pos + 1;
         while (pos < vector::length<String>(&names)){
             yes_constructor_ref = object::create_named_object(
@@ -151,9 +162,8 @@ module movement::PoILiquidityPool{
             vector::push_back(&mut token_amount_vector, ((token_amount as u64)));
             // assert!((user_token_amount * 2) <= (MAX_SUPPLY as u128), 0);
             // minting both tokens to users
-            mint_tokens(sender, *vector::borrow(&token_metadata_vector, pos), 100_000_000);
+            mint_tokens(sender, vector::borrow(&token_metadata_vector, pos), 100_000_000);
             pos = pos + 1;
-
         };
         // initialize the liquidity pool
         initialize_liquidity_pool(sender, title_arg, token_metadata_vector, token_amount_vector, MOVE_AMOUNT, pool_signer, signer_cap)
@@ -161,35 +171,41 @@ module movement::PoILiquidityPool{
         // Object has been cloned and the error occured
     }
 
-    fun mint_tokens(sender: &signer, token: Object<Metadata>, amount: u64) acquires PredictionMarketControl{
-        let token_addr = object::object_address(&token);
+    fun mint_tokens(sender: &signer, token: &Object<Metadata>, amount: u64) acquires PredictionMarketControl{
+        let token_addr = object::object_address(token);
         let control = borrow_global<PredictionMarketControl>(token_addr);
         let fa = fungible_asset::mint(&control.mint_ref, amount);
         primary_fungible_store::deposit(signer::address_of(sender), fa);
     }
 
-    fun initialize_liquidity_pool(sender: &signer, title: String, token_vector: vector<Object<Metadata>>, token_amount_vector: vector<u64>, move_amount: u64, pool_signer: signer, signer_cap: SignerCapability) acquires PredictionMarketControl{
-        // Register the APT coin store for pool
+    fun initialize_liquidity_pool(sender: &signer, title: String, token_vector: vector<Object<Metadata>>, token_amount_vector: vector<u64>, move_amount: u64, pool_signer: signer, signer_cap: SignerCapability):address acquires PredictionMarketControl{
+       // Register the APT coin store for pool
         let pos = 0;
-        let token = *vector::borrow<Object<Metadata>>(&token_vector, pos);
-        let token_amount = *vector::borrow<u64>(&token_amount_vector, pos);
+        let token = vector::borrow<Object<Metadata>>(&token_vector, pos);
+        let token_amount = vector::borrow<u64>(&token_amount_vector, pos);
         if(!coin::is_account_registered<AptosCoin>(signer::address_of(&pool_signer))){
             coin::register<AptosCoin>(&pool_signer);
         };
-        mint_tokens(&pool_signer, token, token_amount);
+        mint_tokens(&pool_signer, token, *token_amount);
         // Transfer aptos to the pool
         let aptos_coin = coin::withdraw<AptosCoin>(sender, move_amount);
         coin::deposit<AptosCoin>(signer::address_of(&pool_signer), aptos_coin);
         pos = pos + 1;
         let length = vector::length<Object<Metadata>>(&token_vector);
+        let initial_token_out = vector::singleton<u64>(1);
         while (pos < length){
-            token = *vector::borrow<Object<Metadata>>(&token_vector, pos);
-            token_amount = *vector::borrow<u64>(&token_amount_vector, pos);
-            mint_tokens(&pool_signer, token, token_amount);
+            token = vector::borrow<Object<Metadata>>(&token_vector, pos);
+            token_amount = vector::borrow<u64>(&token_amount_vector, pos);
+            mint_tokens(&pool_signer, token, *token_amount);
             // Transfer aptos to the pool
+            vector::push_back(&mut initial_token_out, 1);
             pos = pos + 1;
-            length = vector::length<Object<Metadata>>(&token_vector);
         };
+        let users = vector::singleton<address>(signer::address_of(sender));
+        let history_table = table::new();
+        let sender_address = signer::address_of(sender);
+        assert!(vector::length<u64>(&token_amount_vector) == vector::length<u64>(&initial_token_out), 104);
+        table::add(&mut history_table, sender_address, initial_token_out);
         // Initialize the pool
         move_to(&pool_signer,
             PredictionMarketPool{
@@ -199,28 +215,51 @@ module movement::PoILiquidityPool{
                 signer_cap: signer_cap,
                 move_reserve: move_amount,
                 title: title,
+                token_out: initial_token_out,
+                user_history: history_table,
+                users: users,
+                market_end: false,
             }
         );
-        // return PredictionMarketPool {
-        //     tokens: token_amount_vector,
-        //     tokens_metadata: token_vector,
-        //     owner: signer::address_of(sender),
-        //     signer_cap: signer_cap,
-        //     move_reserve: move_amount,
-        //     title: title,
-        // }
-        
+        return signer::address_of(&pool_signer)
+
     }
     public entry fun buy_ticket(
         sender: &signer,
-        pool_addr: address,
         token_idx: u64,
         ticket_amount: u64,
-        market_addr: address,
+        pool_address: address,
     )acquires PredictionMarketPool{
         assert!(ticket_amount > 0, ERR_ZERO_AMOUNT);
-        let move_amount = total_cost_calculator_in_move_when_swapping_move_to_token_and_change_reserve(ticket_amount, token_idx, market_addr);
-        swap_move_to_token(sender, market_addr, token_idx, move_amount, ticket_amount);
+
+        let move_amount = total_cost_calculator_in_move_when_swapping_move_to_token_and_change_reserve(ticket_amount, token_idx, pool_address);
+        swap_move_to_token(sender, pool_address, token_idx, move_amount, ticket_amount);
+        let market_pool = borrow_global_mut<PredictionMarketPool>(pool_address);
+        let val = vector::borrow_mut<u64>(&mut market_pool.token_out, token_idx);
+        *val = *val + ticket_amount;
+        market_pool.move_reserve = market_pool.move_reserve + move_amount;
+        let sender_addr = signer::address_of(sender);
+        if(!vector::contains<address>(&market_pool.users, &sender_addr)){
+            vector::push_back<address>(&mut market_pool.users, sender_addr)
+        };
+        if (table::contains(&market_pool.user_history, sender_addr)){ // if the participant already has received an invitation before
+            let current_token_track = table::borrow_mut(&mut market_pool.user_history, sender_addr);
+            let ticket_bought = vector::borrow_mut<u64>(current_token_track, token_idx); //add the invitation to the list of the invitation
+            *ticket_bought = *ticket_bought + ticket_amount;
+        }else{
+            let current_token_track = vector::empty<u64>();
+            let pos = 0;
+            let length = vector::length<u64>(&market_pool.token_out);
+            while (pos < length){
+                if(pos == token_idx){
+                    vector::push_back<u64>(&mut current_token_track, ticket_amount);
+                } else {
+                    vector::push_back<u64>(&mut current_token_track, ticket_amount);
+                };
+                pos = pos + 1;
+            };
+            table::add(&mut market_pool.user_history, sender_addr, current_token_track);
+        };
     }
     // Swap MOVE for tokens
     fun swap_move_to_token(
@@ -229,7 +268,7 @@ module movement::PoILiquidityPool{
         token_idx: u64,
         move_amount: u64,
         token_out: u64,
-    ) acquires PredictionMarketPool {
+    ) acquires PredictionMarketPool{
         assert!(move_amount > 0, ERR_ZERO_AMOUNT);
         let lp = borrow_global_mut<PredictionMarketPool>(pool_addr);
         let token_reserve = vector::borrow_mut(&mut lp.tokens, token_idx);
@@ -260,6 +299,7 @@ module movement::PoILiquidityPool{
         // Update reserves
 
         lp.move_reserve = lp.move_reserve + move_amount;
+
         // *token_reserve = *token_reserve - token_out;
     }
 
@@ -269,10 +309,11 @@ module movement::PoILiquidityPool{
         pool_addr: address,
         token_idx: u64,
         token_amount: u64
-    ) acquires PredictionMarketPool {
+    ) acquires PredictionMarketPool{
         assert!(token_amount > 0, ERR_ZERO_AMOUNT);
-
         let lp = borrow_global_mut<PredictionMarketPool>(pool_addr);
+        let sender_addr = signer::address_of(sender);
+        assert!(vector::contains(&lp.users, &sender_addr), 1);
         let token_reserve = vector::borrow_mut(&mut lp.tokens, token_idx);
         let token_address = vector::borrow(&lp.tokens_metadata, token_idx);
         // // Calculate MOVE output
@@ -305,6 +346,14 @@ module movement::PoILiquidityPool{
 
         *token_reserve = *token_reserve + token_amount;
         lp.move_reserve = lp.move_reserve - move_out;
+        let val = vector::borrow_mut<u64>(&mut lp.token_out, token_idx);
+        *val = *val - token_amount;
+        lp.move_reserve = lp.move_reserve - move_out;
+        let sender_addr = signer::address_of(sender);
+        assert!(table::contains(&lp.user_history, sender_addr), 0);
+        let current_token_track = table::borrow_mut(&mut lp.user_history, sender_addr);
+        let ticket_bought = vector::borrow_mut<u64>(current_token_track, token_idx); //add the invitation to the list of the invitation
+        *ticket_bought = *ticket_bought - token_amount;
     }
     // Calculate output amount based on AMM formula
     fun get_output_amount(
@@ -331,39 +380,143 @@ module movement::PoILiquidityPool{
         return total_cost
     }
 
+    // Distributing the rewards
+    public(friend) fun distribute_reward(owner: &signer, pool_address: address, result_idx: u64)acquires PredictionMarketPool{
+        let lp = borrow_global<PredictionMarketPool>(pool_address);
+        assert!(signer::address_of(owner) == lp.owner, 2);
+        let result = vector::length<u64>(&lp.tokens) - result_idx;
+        let total_scores = 0;
+        let pos = 0;
+        let weight = vector::length<u64>(&lp.tokens);
+        let length = vector::length<u64>(&lp.tokens);
+        let total_token_out = 0;
+        let move_reserves = lp.move_reserve;
+        while (pos < length){
+            total_token_out = total_token_out + *vector::borrow(&lp.token_out, pos);
+            total_scores = total_scores + weight * *vector::borrow(&lp.token_out, pos);
+            weight = weight - 1;
+            pos = pos + 1;
+        };
+        let mean_score = total_scores / total_token_out;
+        let pool_signer = account::create_signer_with_capability(&lp.signer_cap);
+        if (result > mean_score){
+            let reward_to_owner = lp.move_reserve * 20 / 100;
+            // Transfer the calculated reward to the user.
+            coin::transfer<AptosCoin>(&pool_signer, signer::address_of(owner), reward_to_owner);
+            move_reserves = move_reserves - reward_to_owner;
+        };
+        let constant_weight = result_idx + 1;
+        let total = 0;
+        pos = 0;
+        let proportion = vector::empty<u64>();
+        while(pos < length){
+            let difference = result_idx - pos;
+            let val = constant_weight / (constant_weight + difference);
+            total = total + (constant_weight / (constant_weight + difference));
+            vector::push_back<u64>(&mut proportion, val);
+            pos = pos + 1;
+        };
+        pos = 0;
+        let ticket_prices = vector::empty<u64>();
+        while (pos < length){
+            let reward_amount = move_reserves * (*vector::borrow<u64>(&proportion, pos) / total);
+            let ticket_price = reward_amount / *vector::borrow<u64>(&lp.token_out, pos);
+            vector::push_back(&mut ticket_prices, ticket_price);
+        };
+        let post_market = PostMarketTicketPrice{
+            ticket_price: ticket_prices,
+        };
+        let lp_mut = borrow_global_mut<PredictionMarketPool>(signer::address_of(&pool_signer));
+        lp_mut.market_end = true;
+        move_to(
+            &pool_signer,
+            post_market
+        )
+    }
+
+    public entry fun claim_reward(
+        sender: &signer,
+        pool_addr: address,
+        token_idx: u64,
+        token_amount: u64,
+    ) acquires PredictionMarketPool, PostMarketTicketPrice{
+        assert!(token_amount > 0, ERR_ZERO_AMOUNT);
+        let lp = borrow_global_mut<PredictionMarketPool>(pool_addr);
+        let sender_addr = signer::address_of(sender);
+        assert!(lp.market_end, 1);
+        let token_reserve = vector::borrow_mut(&mut lp.tokens, token_idx);
+        let token_address = vector::borrow(&lp.tokens_metadata, token_idx);
+        // // Calculate MOVE output
+        // let move_out = get_output_amount(
+        //     token_amount,
+        //     *token_reserve,
+        //     lp.move_reserve
+        // );
+        let post_market_price = borrow_global<PostMarketTicketPrice>(pool_addr);
+        let cost_of_ticket = *vector::borrow(&post_market_price.ticket_price, token_idx) * token_amount;
+        let move_out = cost_of_ticket * token_amount;
+        let token_reserve = vector::borrow_mut(&mut lp.tokens, token_idx);
+        
+        assert!(move_out > 0, INSUFFICIENT_LIQUIDITY);
+
+        // Transfer tokens to pool
+        primary_fungible_store::transfer(
+            sender,
+            *token_address,
+            pool_addr,
+            token_amount*100_000_000
+        );
+
+        let pool_signer = account::create_signer_with_capability(&lp.signer_cap);
+
+        // Transfer MOVE to user
+        coin::transfer<AptosCoin>(&pool_signer, signer::address_of(sender), move_out);
+
+        // Update reserves
+
+        *token_reserve = *token_reserve + token_amount;
+        lp.move_reserve = lp.move_reserve - move_out;
+        let val = vector::borrow_mut<u64>(&mut lp.token_out, token_idx);
+        *val = *val - token_amount;
+        lp.move_reserve = lp.move_reserve - move_out;
+        let sender_addr = signer::address_of(sender);
+        assert!(table::contains(&lp.user_history, sender_addr), 0);
+        let current_token_track = table::borrow_mut(&mut lp.user_history, sender_addr);
+        let ticket_bought = vector::borrow_mut<u64>(current_token_track, token_idx); //add the invitation to the list of the invitation
+        *ticket_bought = *ticket_bought - token_amount;
+    }
+
     #[view]
-    fun total_cost_calculator_in_move_when_swapping_move_to_token(
-        desired_output_amount: u64,
-        market_addr: address,
-    ): u64 acquires PredictionMarketPool {
+    fun total_cost_calculator_in_move_when_swapping_move_to_token(desired_output_amount: u64, market_addr: address): u64 acquires PredictionMarketPool {
         let lp = borrow_global_mut<PredictionMarketPool>(market_addr);
         let cost_of_ticket = 100_000_000 / vector::length<u64>(&lp.tokens);
         let total_cost = cost_of_ticket * desired_output_amount;
         return total_cost
     }
-
-    #[test (account=@movement)]
-    fun test_initialisation(account: &signer) acquires MarketCreationReceipt, PredictionMarketControl{
-        init_module(account);
-        let title = utf8(b"Test1");
-        let title_2 = utf8(b"Test2");
-        let grades_symbol = vector::empty<String>();
-        vector::push_back(&mut grades_symbol, utf8(b"A*"));
-        vector::push_back(&mut grades_symbol, utf8(b"A"));
-        vector::push_back(&mut grades_symbol, utf8(b"B"));
-        vector::push_back(&mut grades_symbol, utf8(b"C"));
-        vector::push_back(&mut grades_symbol, utf8(b"D"));
-        let grades = vector::empty<String>();
-        vector::push_back(&mut grades, utf8(b"getting_A*"));
-        vector::push_back(&mut grades, utf8(b"getting_A"));
-        vector::push_back(&mut grades, utf8(b"getting_B"));
-        vector::push_back(&mut grades, utf8(b"getting_C"));
-        vector::push_back(&mut grades, utf8(b"getting_D"));
-        create_ticket_and_buy(account, title, grades, grades_symbol);
-        create_ticket_and_buy(account, title_2, grades, grades_symbol);
-    }
-
 }
+
+    // #[test (account=@movement)]
+    // fun test_initialisation(account: &signer) acquires MarketCreationReceipt, PredictionMarketControl{
+    //     init_module(account);
+    //     let title = utf8(b"Test1");
+    //     let title_2 = utf8(b"Test2");
+    //     let grades_symbol = vector::empty<String>();
+    //     vector::push_back(&mut grades_symbol, utf8(b"A*"));
+    //     vector::push_back(&mut grades_symbol, utf8(b"A"));
+    //     vector::push_back(&mut grades_symbol, utf8(b"B"));
+    //     vector::push_back(&mut grades_symbol, utf8(b"C"));
+    //     vector::push_back(&mut grades_symbol, utf8(b"D"));
+    //     let grades = vector::empty<String>();
+    //     vector::push_back(&mut grades, utf8(b"getting_A*"));
+    //     vector::push_back(&mut grades, utf8(b"getting_A"));
+    //     vector::push_back(&mut grades, utf8(b"getting_B"));
+    //     vector::push_back(&mut grades, utf8(b"getting_C"));
+    //     vector::push_back(&mut grades, utf8(b"getting_D"));
+    //     create_ticket_and_buy(account, title, grades, grades_symbol);
+    //     create_ticket_and_buy(account, title_2, grades, grades_symbol);
+    // }
+
+
 //      [title].        "Hello world"
 // [name of the ticket] ["getting_A*", "getting_A", "getting_B", "getting_C", "getting_D", "getting_E"]
 //      [symbol]        ["A*", "A", "B", "C", "D", "E"]
@@ -373,6 +526,7 @@ module movement::PoILiquidityPool{
 
 
 //      [title].        "Hello world"
+                     // ["0x6c8e325c2f443a0ffa218daff276d1e2f20db1ab944c85edc64df18ed657b78c", "0x42043ec2485174342c3dd9dc1e2c81481f852876b9b3802af4cee6334b955e06"]
 // [name of the ticket] ["getting_A*", "getting_A", "getting_B", "getting_C", "getting_D", "getting_E"]
 //      [symbol]        ["A*", "A", "B", "C", "D", "E"]
 
