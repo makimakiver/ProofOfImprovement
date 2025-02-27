@@ -66,9 +66,9 @@ const Notifications = () => {
     </button>
   );
 
-  const MarketItem = ({ title, publicKey, children }) => (
+  const MarketItem = ({ title, publicKey, children, link }) => (
     <div className="border-b border-gray-200 py-4 flex justify-between items-center group hover:bg-gray-50 transition-colors duration-150 px-2">
-      <div className="text-lg font-medium text-gray-800">{title}</div>
+      <div className="cursor-pointer text-lg font-medium text-gray-800" onClick={() =>  router.push(link)}>{title}</div>
       {children}
     </div>
   );
@@ -76,7 +76,7 @@ const Notifications = () => {
   const InvitationTab = () => (
     <div className="space-y-1">
       {invitations?.map((invitation, i) => (
-        <MarketItem key={i} title={"Exam"}>
+        <MarketItem key={i} title={"Exam"} link={`/notifications/competitioininvitation/${invitation}/${i}`}>
           <div className="text-sm text-gray-500">from <span className="font-mono text-gray-600">{invitation}</span></div>
         </MarketItem>
       ))}
