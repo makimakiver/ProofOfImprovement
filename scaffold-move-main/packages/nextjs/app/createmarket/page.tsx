@@ -69,7 +69,7 @@ const MarketCreatePage: NextPage = () => {
     e.preventDefault();
     
     try {
-      await submitTransaction("new_create_market_place", [title, participants, gradeNames, gradeTypes, "0x81dc8a88ff17e54d1627a999e3400c05317488119198331944f765f49c45cd05"]);
+      await submitTransaction("new_create_market_place", [title, participants, gradeNames, gradeTypes, "0x860d08369d439bcca445a7336e38e5fbe4cad3de4dff1727faae0e5a6607bf27"]);
 
       if (transactionResponse?.transactionSubmitted) {
         console.log("Transaction successful:", transactionResponse.success ? "success" : "failed");
@@ -78,7 +78,7 @@ const MarketCreatePage: NextPage = () => {
       console.error("Error creating market place:", error);
     }
     
-    console.log(title, participants, gradeNames, gradeTypes, "0x81dc8a88ff17e54d1627a999e3400c05317488119198331944f765f49c45cd05");
+    console.log(title, participants, gradeNames, gradeTypes, "0x860d08369d439bcca445a7336e38e5fbe4cad3de4dff1727faae0e5a6607bf27");
 
     //router.push("/")
   };

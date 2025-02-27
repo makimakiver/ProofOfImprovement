@@ -14,7 +14,7 @@ const Notifications = () => {
     data: invitations,
     isLoading: isLoadingBioView,
     refetch: refetchBioView,
-  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_invitation", args: [account?.address as AddressInput, "0x81dc8a88ff17e54d1627a999e3400c05317488119198331944f765f49c45cd05"] });
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_invitation", args: [account?.address as AddressInput, "0x860d08369d439bcca445a7336e38e5fbe4cad3de4dff1727faae0e5a6607bf27"] });
 
   const [activeTab, setActiveTab] = useState('invitation');
 

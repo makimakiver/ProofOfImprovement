@@ -2,27 +2,18 @@
 
 import React, { useState } from 'react';
 import useSubmitTransaction from "~~/hooks/scaffold-move/useSubmitTransaction";
-
-interface CompetitionProps {
-  name: string;
-  description: string;
-  participants: number;
-  startDate: string;
-  endDate: string;
-  prize: string;
-}
+import { useView } from "~~/hooks/scaffold-move/useView";
 
 const CompetitionInvitation = ({ params }) => {
   const { submitTransaction, transactionResponse, transactionInProcess } = useSubmitTransaction("TestMarketAbstraction");
 
-  const competition: CompetitionProps = {
-    name: "Crypto Winter Prediction Challenge",
-    description: "Predict the lowest price of Bitcoin during Q1 2025. Participants will predict various market outcomes and compete for prizes based on accuracy.",
-    participants: 342,
-    startDate: "March 1, 2025",
-    endDate: "March 31, 2025",
-    prize: "$10,000 USDC"
-  };
+  const {
+    data: marketData,
+    isLoading: isLoadingBioView,
+    refetch: refetchBioView,
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_market", args: [params?.address] });
+
+  console.log(marketData);
 
   const [listInMarket, setListInMarket] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
@@ -66,28 +57,19 @@ const CompetitionInvitation = ({ params }) => {
         </div>
         
         <div className="px-6 py-4 border-b">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{competition.name}</h2>
-          
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-            <span>{competition.startDate} - {competition.endDate}</span>
-            <span>•</span>
-            <span className="flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
-              {competition.participants} participants
-            </span>
-          </div>
-          
-          <p className="text-gray-700 mb-4">{competition.description}</p>
-          
-          <div className="bg-indigo-50 rounded-md p-3 flex items-start">
-            <svg className="w-5 h-5 text-indigo-500 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h8V3a1 1 0 112 0v1h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h1V3a1 1 0 011-1zm11 14V7H4v9h12z" clipRule="evenodd" />
-            </svg>
-            <div>
-              <p className="text-sm font-medium text-indigo-700">Prize Pool</p>
-              <p className="text-sm text-indigo-600">{competition.prize}</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{marketData?.length && marketData[0]?.title}</h2>
+
+          <div>
+            <h3 className="text-md font-medium text-gray-900 mb-3">Participants</h3>
+            
+            <div className="bg-gray-50 rounded-md border border-gray-200">
+              <div className="divide-y divide-gray-200">
+                {marketData?.length && marketData[0]?.participants.map((participant, index) => (
+                  <div key={index} className="px-4 py-3 flex justify-between items-center">
+                    <p className="text-xs text-gray-500 font-mono">{(participant)}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
