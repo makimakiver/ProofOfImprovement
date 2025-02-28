@@ -22,9 +22,13 @@ const Notifications = () => {
     refetch: refetchSubmitView,
   } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_require_submit_market", args: [account?.address as AddressInput, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS] });
 
-  const [activeTab, setActiveTab] = useState('invitation');
+  const {
+    data: view_validation,
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_validation", args: [account?.address as AddressInput, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS] });
 
-  console.log(require_submit_market);
+  console.log(view_validation);
+
+  const [activeTab, setActiveTab] = useState('invitation');
   
   const markets = [
     { id: 1, title: '<Market title1>', publicKey: '<Public key1>', reward: '12.68Move' },
@@ -91,7 +95,7 @@ const Notifications = () => {
 
   const ValidationTab = () => (
     <div className="space-y-1">
-      {require_submit_market?.length && require_submit_market.map((market, i) => (
+      {require_submit_market?.length && require_submit_market[0].map((market, i) => (
         <MarketItem key={i} title={'Exam'}>
           <div className="flex items-center gap-2">
             <div className="text-sm font-medium text-gray-700 cursor-pointer" onClick={() =>  router.push(`/submitresult/${market}`)}>Submit result</div>
@@ -99,12 +103,12 @@ const Notifications = () => {
           </div>
         </MarketItem>
       ))}
-      
-      {markets.slice(0, 2).map((market, index) => (
-        <MarketItem key={market.id} title={market.title}>
+
+      {view_validation?.length && view_validation[0].map((market, i) => (
+        <MarketItem key={i} title={'Exam'}>
           <div className="flex items-center gap-2">
             <div className="text-sm font-medium text-gray-700 cursor-pointer" onClick={() =>  router.push("/validateresult")}>validate friends</div>
-            <div className="text-sm text-gray-500">from <span className="font-mono text-gray-600">{`<Public key${index + 2}>`}</span></div>
+            <div className="text-sm text-gray-500">from <span className="font-mono text-gray-600">{market}</span></div>
           </div>
         </MarketItem>
       ))}
