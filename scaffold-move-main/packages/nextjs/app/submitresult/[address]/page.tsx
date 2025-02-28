@@ -3,9 +3,12 @@
 import React, { useState } from 'react';
 import { useRouter } from "next/navigation";
 import { useView } from "~~/hooks/scaffold-move/useView";
+import useSubmitTransaction from "~~/hooks/scaffold-move/useSubmitTransaction";
 
 const SubmitResultPage = ({ params }) => {
   const router = useRouter();
+
+  const { submitTransaction, transactionResponse, transactionInProcess } = useSubmitTransaction("TestMarketAbstraction");
  
   const {
     data: marketData,
@@ -59,20 +62,25 @@ const SubmitResultPage = ({ params }) => {
     return isValid;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const url = "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b";
     
-    if (validateForm()) {
-      console.log({
-        selectedFile,
-        selectedResult
-      });
+    try {
+      await submitTransaction("create_validation", [selectedResult, url, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS, params.address]);
+
+      if (transactionResponse?.transactionSubmitted) {
+        console.log("Transaction successful:", transactionResponse.success ? "success" : "failed");
+
+        alert('Result submitted successfully!');
       
-      alert('Result submitted successfully!');
-      
-      setSelectedFile(null);
-      setSelectedResult('');
-      setPreviewUrl(null);
+        setSelectedFile(null);
+        setSelectedResult('');
+        setPreviewUrl(null);
+      }
+    } catch (error) {
+      console.error("Error creating market place:", error);
     }
   };
 
@@ -162,12 +170,9 @@ const SubmitResultPage = ({ params }) => {
               onChange={(e) => setSelectedResult(e.target.value)}
             >
               <option value="">-- Select a result --</option>
-              <option value="A+">A+</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-              <option value="E">E</option>
+              {marketData?.length && marketData[0]?.options.map((option, i) => (
+                <option key={i} value={i}>{option}</option>
+              ))}
             </select>
             {errors.result && (
               <p className="mt-1 text-sm text-red-500">{errors.result}</p>
