@@ -23,7 +23,7 @@ const Home: NextPage = () => {
     data: marketList,
     isLoading: isLoadingBioView,
     refetch: refetchBioView,
-  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_markets", args: [account?.address as AddressInput, "0x860d08369d439bcca445a7336e38e5fbe4cad3de4dff1727faae0e5a6607bf27"] });
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_markets", args: [account?.address as AddressInput, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS] });
 
   console.log(marketList)
   const competitions: Competition[] = [

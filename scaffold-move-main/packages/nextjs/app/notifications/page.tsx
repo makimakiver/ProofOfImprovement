@@ -14,11 +14,17 @@ const Notifications = () => {
     data: invitations,
     isLoading: isLoadingBioView,
     refetch: refetchBioView,
-  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_invitation", args: [account?.address as AddressInput, "0x860d08369d439bcca445a7336e38e5fbe4cad3de4dff1727faae0e5a6607bf27"] });
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_invitation", args: [account?.address as AddressInput, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS] });
+
+  const {
+    data: require_submit_market,
+    isLoading: isLoadingSubmitView,
+    refetch: refetchSubmitView,
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_require_submit_market", args: [account?.address as AddressInput, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS] });
 
   const [activeTab, setActiveTab] = useState('invitation');
 
-  console.log(invitations);
+  console.log(require_submit_market);
   
   const markets = [
     { id: 1, title: '<Market title1>', publicKey: '<Public key1>', reward: '12.68Move' },

@@ -7,16 +7,11 @@ import { useView } from "~~/hooks/scaffold-move/useView";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { AddressInput } from "~~/types/scaffold-move";
 
-interface PredictionOption {
-  outcome: string;
-  chance: number;
-  moveAmount: number;
-}
-
 const PredictionPage = ({ params }) => {
   const { account } = useWallet();
 
   const { submitTransaction, transactionResponse, transactionInProcess } = useSubmitTransaction("PoILiquidityPool");
+  const { submitTransaction: submitTestMarketAbstractionTransaction, transactionResponse: transactionTestMarketAbstractionResponse } = useSubmitTransaction("TestMarketAbstraction");
 
   const {
     data: marketData,
@@ -29,8 +24,15 @@ const PredictionPage = ({ params }) => {
     data: lp,
     isLoading: isLoadinglpView,
     refetch: refetchliView,
-  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_lp_addr", args: [account?.address as AddressInput,params.address] });
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_lp_addr", args: [account?.address as AddressInput, params.address] });
   console.log(lp)
+
+  const {
+    data: isOwner,
+    isLoading: isOwnerView,
+    refetch: refetchOwnerView,
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_whether_owner", args: [account?.address as AddressInput, params.address] });
+  console.log("isOwner", isOwner)
 
   const chartData = [
     { date: 'Feb 7', blue: 45, red: 20, green: 10 },
@@ -38,15 +40,6 @@ const PredictionPage = ({ params }) => {
     { date: 'Feb 13', blue: 35, red: 30, green: 15 },
     { date: 'Feb 16', blue: 38, red: 32, green: 14 },
     { date: 'Feb 19', blue: 36, red: 34, green: 13 }
-  ];
-
-  const predictions: PredictionOption[] = [
-    { outcome: 'A*', chance: 80, moveAmount: 0.8 },
-    { outcome: 'A', chance: 9, moveAmount: 0.09 },
-    { outcome: 'B', chance: 8, moveAmount: 0.08 },
-    { outcome: 'C', chance: 1, moveAmount: 0.01 },
-    { outcome: 'D', chance: 1, moveAmount: 0.01 },
-    { outcome: 'E', chance: 1, moveAmount: 0.01 }
   ];
 
   const buyTicket = async (id: number) => {
@@ -59,6 +52,18 @@ const PredictionPage = ({ params }) => {
       }
     } catch (error) {
       console.error("Error registering bio:", error);
+    }
+  };
+
+  const finishMarket = async () => {
+    try {
+      await submitTestMarketAbstractionTransaction("finish_market", [params.address]);
+
+      if (transactionTestMarketAbstractionResponse?.transactionSubmitted) {
+        console.log("Transaction successful:", transactionTestMarketAbstractionResponse.success ? "success" : "failed");
+      }
+    } catch (error) {
+      console.error("Error finish market:", error);
     }
   };
 
@@ -126,9 +131,12 @@ const PredictionPage = ({ params }) => {
               </div>
             </div>
 
-            <button className="w-full mb-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-              Login to Trade
-            </button>
+            {isOwner?.length && isOwner[0] && <button
+              className="w-full mb-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              onClick={finishMarket}
+            >
+              Close Market
+            </button>}
 
             <div className="rounded-lg border border-gray-200 overflow-hidden">
               <div className="grid grid-cols-3 bg-gray-50 text-sm font-medium">
