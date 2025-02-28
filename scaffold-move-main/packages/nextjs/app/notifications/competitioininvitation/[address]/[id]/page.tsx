@@ -31,7 +31,7 @@ const CompetitionInvitation = ({ params }) => {
     setSubmitting(true);
 
     try {
-      await submitTransaction("new_respond_invitation", ["0xd22f09ab6cb6685d656f9db1483bb37c54aa771195db8fd6e7022bbfe29f7bd3", listInMarket === "yes", true, params?.id]);
+      await submitTransaction("new_respond_invitation", [process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS, listInMarket === "yes", true, params?.id]);
 
       if (transactionResponse?.transactionSubmitted) {
         console.log("Transaction successful:", transactionResponse.success ? "success" : "failed");

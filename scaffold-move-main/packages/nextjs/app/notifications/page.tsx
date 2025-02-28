@@ -91,12 +91,14 @@ const Notifications = () => {
 
   const ValidationTab = () => (
     <div className="space-y-1">
-      <MarketItem title={markets[0].title}>
-        <div className="flex items-center gap-2">
-          <div className="text-sm font-medium text-gray-700 cursor-pointer" onClick={() =>  router.push("/submitresult")}>Submit result</div>
-          <div className="text-sm text-gray-500">from <span className="font-mono text-gray-600">{markets[0].publicKey}</span></div>
-        </div>
-      </MarketItem>
+      {require_submit_market?.length && require_submit_market.map((market, i) => (
+        <MarketItem key={i} title={'Exam'}>
+          <div className="flex items-center gap-2">
+            <div className="text-sm font-medium text-gray-700 cursor-pointer" onClick={() =>  router.push(`/submitresult/${market}`)}>Submit result</div>
+            <div className="text-sm text-gray-500">from <span className="font-mono text-gray-600">{market}</span></div>
+          </div>
+        </MarketItem>
+      ))}
       
       {markets.slice(0, 2).map((market, index) => (
         <MarketItem key={market.id} title={market.title}>

@@ -109,13 +109,13 @@ const Home: NextPage = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Upcoming Competitions</h2>
-            <div className="text-sm text-gray-500">{upcomingCompetitions.length} competitions</div>
+            <div className="text-sm text-gray-500">{marketList?.length && marketList[0].length} competitions</div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            {marketList?.map((competition, i) => (
+            {marketList?.length && marketList[0]?.map((competition, i) => (
               <CompetitionCard key={i} competition={competition} isPast={false} />
             ))}
-            {marketList?.length === 0 && (
+            {marketList?.length && marketList[0] === 0 && (
               <div className="col-span-2 text-center py-8 text-gray-500">
                 No upcoming competitions at the moment
               </div>

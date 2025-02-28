@@ -25,6 +25,7 @@ const MarketCreatePage: NextPage = () => {
   const [participantInput, setParticipantInput] = useState("");
   const [participants, setParticipants] = useState<string[]>([]);
   const [gradeTypeInput, setGradeTypeInput] = useState("");
+  const [gradeNameInput, setGradeNameInput] = useState("");
   const [gradeTypes, setGradeTypes] = useState<string[]>([]);
   const [gradeNames, setGradeNames] = useState<string[]>([]);
   const [endDate, setEndDate] = useState("");
@@ -37,6 +38,7 @@ const MarketCreatePage: NextPage = () => {
       setParticipants([]);
       setGradeTypes([]);
       setEndDate("");
+      setGradeNames([]);
     }
     else{ 
       setTriger(true);
@@ -53,6 +55,14 @@ const MarketCreatePage: NextPage = () => {
     if (participantInput.trim()) {
       setParticipants([...participants, participantInput.trim()]);
       setParticipantInput("");
+    }
+  };
+
+  // Handlers for adding multiple grade names
+  const handleAddNamesType = () => {
+    if (gradeNameInput.trim()) {
+      setGradeNames([...gradeNames, gradeNameInput.trim()]);
+      setGradeNameInput("");
     }
   };
 
@@ -122,6 +132,32 @@ const MarketCreatePage: NextPage = () => {
             <ul className={styles.participantList}>
               {participants.map((p, idx) => (
                 <li key={idx}>{p}</li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Grade Names */}
+          <div className={styles.formField}>
+            <label className={styles.label}>Grade Names</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                className={`${styles.inputField} flex-grow`}
+                value={gradeNameInput}
+                onChange={(e) => setGradeNameInput(e.target.value)}
+                placeholder="e.g. Test-A, Test-B, Test-Pass, etc."
+              />
+              <button
+                type="button"
+                className={styles.addButton}
+                onClick={handleAddNamesType}
+              >
+                +
+              </button>
+            </div>
+            <ul className={styles.gradeList}>
+              {gradeNames.map((g, idx) => (
+                <li key={idx}>{g}</li>
               ))}
             </ul>
           </div>
