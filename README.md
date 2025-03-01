@@ -14,8 +14,21 @@ e.g  https://polymarket.com/event/one-direction-reunion-in-2025?tid=174082845249
 # structure
 <img width="649" alt="image" src="https://github.com/user-attachments/assets/88356512-c6fb-49b6-9887-5448a96a2c06" />
 
+excalid draw: 
+
 https://excalidraw.com/#room=9a3ffcea393f10a321c8,ujaNLC7r-sueNNKXCE268g
 
-# Smart Contracts going through 
-[https://youtu.be/WbPaWn9WItM](https://youtu.be/ZwxP__pOm7E)
-[https://youtu.be/WbPaWn9WItM](https://youtu.be/WbPaWn9WItM)
+
+![image](https://github.com/user-attachments/assets/cf8fca1d-ef5e-4d33-8a31-bcc275b1e4f3)
+
+
+# videos  
+smart contract explanation part 1
+[[https://youtu.be/WbPaWn9WItM](https://youtu.be/ZwxP__pOm7E)](https://www.youtube.com/watch?v=ZwxP__pOm7E)
+
+smart contract explanation part 2
+[[https://youtu.be/WbPaWn9WItM](https://youtu.be/WbPaWn9WItM)](https://www.youtube.com/watch?v=WbPaWn9WItM&t=4s)
+
+
+
+
