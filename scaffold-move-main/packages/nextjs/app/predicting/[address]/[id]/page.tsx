@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import useSubmitTransaction from "~~/hooks/scaffold-move/useSubmitTransaction";
 import { useView } from "~~/hooks/scaffold-move/useView";
@@ -9,6 +9,8 @@ import { AddressInput } from "~~/types/scaffold-move";
 
 const PredictionPage = ({ params }) => {
   const { account } = useWallet();
+
+  const [selectedResult, setSelectedResult] = useState('');
 
   const { submitTransaction, transactionResponse, transactionInProcess } = useSubmitTransaction("PoILiquidityPool");
   const { submitTransaction: submitTestMarketAbstractionTransaction, transactionResponse: transactionTestMarketAbstractionResponse } = useSubmitTransaction("TestMarketAbstraction");
@@ -39,6 +41,11 @@ const PredictionPage = ({ params }) => {
   } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_market_obj", args: [account?.address as AddressInput, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS] });
   console.log("view_market_obj", view_market_obj)
 
+  const {
+    data: view_lps,
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_lps", args: [params.address, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS] });
+  console.log("view_lps", view_lps)
+
   const chartData = [
     { date: 'Feb 7', blue: 45, red: 20, green: 10 },
     { date: 'Feb 10', blue: 40, red: 25, green: 12 },
@@ -49,7 +56,7 @@ const PredictionPage = ({ params }) => {
 
   const buyTicket = async (id: number) => {
     try {
-      await submitTransaction("buy_ticket", [id, 1, lp[0]]);
+      await submitTransaction("buy_ticket", [id, 1, selectedResult]);
 
       // await fetchBio();
       if (transactionResponse?.transactionSubmitted) {
@@ -138,8 +145,20 @@ const PredictionPage = ({ params }) => {
               </div>
             </div>
 
-            <h3>Liquidity Pool Address</h3>
-            <p>{lp}</p>
+            <label htmlFor="result" className="block text-sm font-medium text-gray-700 mb-1">
+              Select Liquidity Pool Address
+            </label>
+            <select
+              id="result"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 border-gray-300'}`}
+              value={selectedResult}
+              onChange={(e) => setSelectedResult(e.target.value)}
+            >
+              <option value="">-- Select a Pool --</option>
+              {view_lps?.length && view_lps[0].map(lp => (
+                <option key={lp} value={lp}>{lp}</option>
+              ))}
+            </select>
 
             <div className="mb-6">
               <div className="text-sm font-medium mb-2">Amount</div>
@@ -165,7 +184,7 @@ const PredictionPage = ({ params }) => {
               Distribute Reward
             </button>}
 
-            {lp && <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <div className="rounded-lg border border-gray-200 overflow-hidden">
               <div className="grid grid-cols-3 bg-gray-50 text-sm font-medium">
                 <div className="px-4 py-2">Outcomes</div>
                 <div className="px-4 py-2">Chances</div>
@@ -182,7 +201,7 @@ const PredictionPage = ({ params }) => {
                   </div>
                 </div>
               ))}
-            </div>}
+            </div>
 
             <div className="mt-4 text-sm text-gray-500">
               By trading, you agree to the Terms of Use
