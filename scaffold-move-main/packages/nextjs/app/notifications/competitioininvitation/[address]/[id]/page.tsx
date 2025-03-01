@@ -11,7 +11,7 @@ const CompetitionInvitation = ({ params }) => {
     data: marketData,
     isLoading: isLoadingBioView,
     refetch: refetchBioView,
-  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_market", args: [params?.address] });
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_market_obj", args: [params?.address, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS] });
 
   console.log(marketData);
 
@@ -62,15 +62,15 @@ const CompetitionInvitation = ({ params }) => {
           <div>
             <h3 className="text-md font-medium text-gray-900 mb-3">Participants</h3>
             
-            <div className="bg-gray-50 rounded-md border border-gray-200">
+            {/* <div className="bg-gray-50 rounded-md border border-gray-200">
               <div className="divide-y divide-gray-200">
-                {marketData?.length && marketData[0]?.participants.map((participant, index) => (
+                {marketData?.length > 0 && marketData[0]?.participants.map((participant, index) => (
                   <div key={index} className="px-4 py-3 flex justify-between items-center">
                     <p className="text-xs text-gray-500 font-mono">{(participant)}</p>
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
         

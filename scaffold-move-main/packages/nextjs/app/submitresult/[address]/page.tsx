@@ -170,9 +170,10 @@ const SubmitResultPage = ({ params }) => {
               onChange={(e) => setSelectedResult(e.target.value)}
             >
               <option value="">-- Select a result --</option>
-              {marketData?.length && marketData[0]?.options.map((option, i) => (
-                <option key={i} value={i}>{option}</option>
-              ))}
+              <option value={0}>A</option>
+              <option value={1}>B</option>
+              <option value={2}>C</option>
+              <option value={3}>D</option>
             </select>
             {errors.result && (
               <p className="mt-1 text-sm text-red-500">{errors.result}</p>
