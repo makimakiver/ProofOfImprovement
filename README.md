@@ -11,6 +11,10 @@ the biggest issue in the prediction market is that the target of the prediction 
 We have achieved them via adding logics to the smart contracts and enable the market creators to get rewarded by performing more than average score. 
 e.g  https://polymarket.com/event/one-direction-reunion-in-2025?tid=1740828452490
 
+# Initial Idea
+
+![image](https://github.com/user-attachments/assets/cf8fca1d-ef5e-4d33-8a31-bcc275b1e4f3)
+
 # structure
 <img width="649" alt="image" src="https://github.com/user-attachments/assets/88356512-c6fb-49b6-9887-5448a96a2c06" />
 
@@ -19,7 +23,6 @@ excalid draw:
 https://excalidraw.com/#room=9a3ffcea393f10a321c8,ujaNLC7r-sueNNKXCE268g
 
 
-![image](https://github.com/user-attachments/assets/cf8fca1d-ef5e-4d33-8a31-bcc275b1e4f3)
 
 
 # videos  
