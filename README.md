@@ -32,6 +32,7 @@ smart contract explanation part 1
 smart contract explanation part 2
 [[https://youtu.be/WbPaWn9WItM](https://youtu.be/WbPaWn9WItM)](https://www.youtube.com/watch?v=WbPaWn9WItM&t=4s)
 
-
+smart contract explanation part 3
+https://youtu.be/mfEEKP2ZUrA
 
 
