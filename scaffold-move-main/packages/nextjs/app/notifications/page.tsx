@@ -28,6 +28,12 @@ const Notifications = () => {
 
   console.log(view_validation);
 
+  const {
+    data: view_validation_not_submitted,
+  } = useView({ moduleName: "TestMarketAbstraction", functionName: "view_validation_not_submitted", args: [account?.address as AddressInput, process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS] });
+
+  console.log(view_validation_not_submitted);
+
   const [activeTab, setActiveTab] = useState('invitation');
   
   const markets = [
@@ -104,7 +110,7 @@ const Notifications = () => {
         </MarketItem>
       ))}
 
-      {view_validation?.length && view_validation[0].map((market, i) => (
+      {view_validation_not_submitted?.length && view_validation_not_submitted[0].map((market, i) => (
         <MarketItem key={i} title={'Exam'}>
           <div className="flex items-center gap-2">
             <div className="text-sm font-medium text-gray-700 cursor-pointer" onClick={() =>  router.push("/validateresult")}>validate friends</div>

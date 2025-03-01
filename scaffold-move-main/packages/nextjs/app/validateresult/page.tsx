@@ -1,8 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
+import useSubmitTransaction from "~~/hooks/scaffold-move/useSubmitTransaction";
 
 const ValidateResultPage = () => {
+  const { submitTransaction, transactionResponse, transactionInProcess } = useSubmitTransaction("TestMarketAbstraction");
+
   const [isInvalidModalOpen, setIsInvalidModalOpen] = useState(false);
   const [invalidReason, setInvalidReason] = useState('different-score');
   const [differentScore, setDifferentScore] = useState('');
@@ -14,8 +17,16 @@ const ValidateResultPage = () => {
     selectedResult: "A"
   };
 
-  const handleValidClick = () => {
-    alert('Result validated successfully');
+  const handleValidClick = async () => {
+    try {
+      await submitTransaction("new_respond_validation", [process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS, true, "", 0]);
+
+      if (transactionResponse?.transactionSubmitted) {
+        console.log("Transaction successful:", transactionResponse.success ? "success" : "failed");
+      }
+    } catch (error) {
+      console.error("Error submitTransaction:", error);
+    }
   };
 
   const handleInvalidClick = () => {
