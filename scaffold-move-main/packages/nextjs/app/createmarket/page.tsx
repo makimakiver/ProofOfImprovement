@@ -13,7 +13,7 @@ const MarketCreatePage: NextPage = () => {
   // ----- Hardcoded "previous market" data -----
   const previousMarketData = {
     title: "Math Test",
-    participants:   ["0xe1c10cb6c4f0f82b289e51d710c77dba2e3ad36d98a4e9a42f8a8a58888ff8bb", "0xbd9acfeaf6ff0e774ad3278549c9799d0c4d8d50540c7b8c77390650f2739882","0xf884a0e321a9432a3e93b8f2f39f3a47be3016050136efeccb4069844548df60"],
+    participants:  ["0x86960a9e820d43238e6b0034153acc599b23c2628f4036f1982e1cf45903fb36", "0x142f8257d95c7a9de19cd3e753b4fc6ea22d02739bdef27ddb94be0546bd61da", "0x5c92415defbe8124336f1bbfae06639da7446845d7bb4b7bc985ee608dd89312", "0x641f3b46e82c3fd05fe041a76f63970e5f3e38bcf0d4f5532a7040cf5e046955"],
     nameOfTicket: ["Test A", "Test B", "Test C", "Test F"],
     gradeTypes: ["A", "B", "C", "F"],
     endDate: "2025-12-31"

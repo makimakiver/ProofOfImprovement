@@ -72,6 +72,18 @@ const PredictionPage = ({ params }) => {
     }
   };
 
+  const distributeReward = async () => {
+    try {
+      await submitTestMarketAbstractionTransaction("distribute_reward_or_stay_same", [params.address,  process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS]);
+
+      if (transactionTestMarketAbstractionResponse?.transactionSubmitted) {
+        console.log("Transaction successful:", transactionTestMarketAbstractionResponse.success ? "success" : "failed");
+      }
+    } catch (error) {
+      console.error("Error distribute_reward_or_stay_same:", error);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
       <div className="flex items-center justify-between bg-white rounded-lg p-4 shadow">
@@ -143,6 +155,13 @@ const PredictionPage = ({ params }) => {
               onClick={finishMarket}
             >
               Close Market
+            </button>}
+
+            {isOwner?.length && isOwner[0] && <button
+              className="w-full mb-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              onClick={distributeReward}
+            >
+              Distribute Reward
             </button>}
 
             {lp && <div className="rounded-lg border border-gray-200 overflow-hidden">
