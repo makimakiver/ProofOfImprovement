@@ -138,6 +138,7 @@ const PredictionPage = ({ params }) => {
               </div>
             </div>
 
+            <h3>Liquidity Pool Address</h3>
             <p>{lp}</p>
 
             <div className="mb-6">

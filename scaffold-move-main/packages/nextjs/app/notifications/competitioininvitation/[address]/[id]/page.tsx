@@ -16,6 +16,7 @@ const CompetitionInvitation = ({ params }) => {
   console.log(marketData);
 
   const [listInMarket, setListInMarket] = useState<string>("");
+  const [participateMarket, setParticipateMarket] = useState<string>("");
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
@@ -31,13 +32,15 @@ const CompetitionInvitation = ({ params }) => {
     setSubmitting(true);
 
     try {
-      await submitTransaction("new_respond_invitation", [process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS, listInMarket === "yes", true, params?.id]);
+      await submitTransaction("new_respond_invitation", [process.env.NEXT_PUBLIC_REGISTRY_ACCOUNT_ADDRESS, listInMarket === "yes", participateMarket === "yes", params?.id]);
 
       if (transactionResponse?.transactionSubmitted) {
         console.log("Transaction successful:", transactionResponse.success ? "success" : "failed");
       }
+      setSubmitting(false);
     } catch (error) {
       console.error("Error creating market place:", error);
+      setSubmitting(false);
     }
     
     console.log({
@@ -105,6 +108,46 @@ const CompetitionInvitation = ({ params }) => {
                   value="no"
                   checked={listInMarket === "no"}
                   onChange={() => setListInMarket("no")}
+                />
+                <label htmlFor="list-no" className="ml-3 block text-sm text-gray-700">
+                  No
+                </label>
+              </div>
+            </div>
+            
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Do you want participate in the prediction market?
+            </label>
+            
+            <div className="space-y-2">
+              <div className="flex items-center">
+                <input
+                  id="list-yes"
+                  name="participateMarket"
+                  type="radio"
+                  className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                  value="yes"
+                  checked={participateMarket === "yes"}
+                  onChange={() => setParticipateMarket("yes")}
+                />
+                <label htmlFor="list-yes" className="ml-3 block text-sm text-gray-700">
+                  Yes
+                </label>
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  id="list-no"
+                  name="participateMarket"
+                  type="radio"
+                  className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
+                  value="no"
+                  checked={participateMarket === "no"}
+                  onChange={() => setParticipateMarket("no")}
                 />
                 <label htmlFor="list-no" className="ml-3 block text-sm text-gray-700">
                   No
