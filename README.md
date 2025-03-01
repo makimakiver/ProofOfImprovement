@@ -1,7 +1,7 @@
 # ProofOfImprovement
 Celestia Mammothon project: Movement bounty
 
-https://proofofimprovement.vercel.app/submitresult/0xdf2918686d61840db744dfaeeec7ac6126abbf14186c4270a5ff8798e0c7b5d7
+Link to our project: https://proofofimprovement.vercel.app/submitresult/0xdf2918686d61840db744dfaeeec7ac6126abbf14186c4270a5ff8798e0c7b5d7
 
 # Project Overview:
 the biggest issue in the prediction market is that the target of the prediction market is not getting rewarded. For example, Although cristiano ronaldo did hattrick in a football match, money generated from the prediction market will not flow into cristiano ronaldo's wallet. As the prediction market will get niche more and more, there must be a prediction market which is satisfying following criterias:
